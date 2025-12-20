@@ -9,13 +9,18 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-RUN chmod +x /usr/local/bin/uv
+# 安装 uv（使用官方安装脚本，避免 ghcr.io 网络问题）
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    chmod +x /usr/local/bin/uv
 
 # 复制项目配置文件
 COPY pyproject.toml ./
 COPY uv.lock* ./
+
+# 设置 uv 超时时间和镜像源（解决网络慢导致的下载失败）
+ENV UV_HTTP_TIMEOUT=600
+ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
 
 # 安装 Python 依赖
 # 如果有 uv.lock 文件则使用 --frozen，否则生成新的锁定文件
