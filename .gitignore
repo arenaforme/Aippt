@@ -28,6 +28,7 @@
 *.md
 !README.md
 !README_EN.md
+!docs/USER_MANUAL.md
 *.pyc
 .env
 *.ppt
