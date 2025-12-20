@@ -10,9 +10,29 @@ export const apiClient = axios.create({
   timeout: 300000, // 5分钟超时（AI生成可能很慢）
 });
 
+// 获取 Token 的辅助函数（从 localStorage 读取 zustand persist 的数据）
+const getAuthToken = (): string | null => {
+  try {
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage);
+      return parsed.state?.token || null;
+    }
+  } catch (error) {
+    console.warn('Failed to parse auth storage:', error);
+  }
+  return null;
+};
+
 // 请求拦截器
 apiClient.interceptors.request.use(
   (config) => {
+    // 添加 Authorization header
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
     // 如果请求体是 FormData，删除 Content-Type 让浏览器自动设置
     // 浏览器会自动添加正确的 Content-Type 和 boundary
     if (config.data instanceof FormData) {
@@ -24,7 +44,7 @@ apiClient.interceptors.request.use(
       // 对于非 FormData 请求，默认设置为 JSON
       config.headers['Content-Type'] = 'application/json';
     }
-    
+
     return config;
   },
   (error) => {
@@ -42,6 +62,16 @@ apiClient.interceptors.response.use(
     if (error.response) {
       // 服务器返回错误状态码
       console.error('API Error:', error.response.data);
+
+      // 401 未授权：Token 无效或过期
+      if (error.response.status === 401) {
+        // 清除本地存储的认证信息
+        localStorage.removeItem('auth-storage');
+        // 如果不在登录页，跳转到登录页
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      }
     } else if (error.request) {
       // 请求已发送但没有收到响应
       console.error('Network Error:', error.request);

@@ -789,3 +789,83 @@ export const resetSettings = async (): Promise<ApiResponse<Settings>> => {
   const response = await apiClient.post<ApiResponse<Settings>>('/api/settings/reset');
   return response.data;
 };
+
+// ===== 管理员 API =====
+
+export interface AdminUser {
+  id: string;
+  username: string;
+  role: 'user' | 'admin';
+  status: 'active' | 'disabled';
+  created_at: string;
+  last_login_at: string | null;
+}
+
+/**
+ * 获取用户列表（管理员）
+ */
+export const listUsers = async (params?: {
+  limit?: number;
+  offset?: number;
+  status?: string;
+  role?: string;
+}): Promise<ApiResponse<{ users: AdminUser[]; total: number }>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+  if (params?.status) searchParams.append('status', params.status);
+  if (params?.role) searchParams.append('role', params.role);
+
+  const response = await apiClient.get<ApiResponse<{ users: AdminUser[]; total: number }>>(
+    `/api/admin/users?${searchParams.toString()}`
+  );
+  return response.data;
+};
+
+/**
+ * 创建用户（管理员）
+ */
+export const createUser = async (data: {
+  username: string;
+  password: string;
+  role?: 'user' | 'admin';
+}): Promise<ApiResponse<{ user: AdminUser }>> => {
+  const response = await apiClient.post<ApiResponse<{ user: AdminUser }>>('/api/admin/users', data);
+  return response.data;
+};
+
+/**
+ * 更新用户（管理员）
+ */
+export const updateUser = async (
+  userId: string,
+  data: { role?: string; status?: string }
+): Promise<ApiResponse<{ user: AdminUser }>> => {
+  const response = await apiClient.put<ApiResponse<{ user: AdminUser }>>(
+    `/api/admin/users/${userId}`,
+    data
+  );
+  return response.data;
+};
+
+/**
+ * 删除用户（管理员）
+ */
+export const deleteUser = async (userId: string): Promise<ApiResponse<null>> => {
+  const response = await apiClient.delete<ApiResponse<null>>(`/api/admin/users/${userId}`);
+  return response.data;
+};
+
+/**
+ * 重置用户密码（管理员）
+ */
+export const resetUserPassword = async (
+  userId: string,
+  newPassword: string
+): Promise<ApiResponse<null>> => {
+  const response = await apiClient.post<ApiResponse<null>>(
+    `/api/admin/users/${userId}/reset-password`,
+    { new_password: newPassword }
+  );
+  return response.data;
+};

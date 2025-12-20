@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, FileText, Sparkles } from 'lucide-react';
-import { Button, Loading, useToast, useConfirm, AiRefineInput, FilePreviewModal, ProjectResourcesList } from '@/components/shared';
+import { Button, Loading, useToast, useConfirm, AiRefineInput, FilePreviewModal, ProjectResourcesList, UserMenu } from '@/components/shared';
 import { DescriptionCard } from '@/components/preview/DescriptionCard';
 import { useProjectStore } from '@/store/useProjectStore';
 import { refineDescriptions } from '@/api/endpoints';
@@ -188,6 +188,7 @@ export const DetailEditor: React.FC = () => {
             >
               <span className="hidden sm:inline">生成图片</span>
             </Button>
+            <UserMenu />
           </div>
         </div>
         

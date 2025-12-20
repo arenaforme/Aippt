@@ -13,6 +13,12 @@ db = SQLAlchemy(
     }
 )
 
+# 用户认证相关模型（需要先导入，因为其他模型依赖它）
+from .user import User
+from .audit_log import AuditLog
+from .system_config import SystemConfig
+
+# 业务模型
 from .project import Project
 from .page import Page
 from .task import Task
@@ -22,5 +28,10 @@ from .material import Material
 from .reference_file import ReferenceFile
 from .settings import Settings
 
-__all__ = ['db', 'Project', 'Page', 'Task', 'UserTemplate', 'PageImageVersion', 'Material', 'ReferenceFile', 'Settings']
+__all__ = [
+    'db',
+    'User', 'AuditLog', 'SystemConfig',
+    'Project', 'Page', 'Task', 'UserTemplate',
+    'PageImageVersion', 'Material', 'ReferenceFile', 'Settings'
+]
 

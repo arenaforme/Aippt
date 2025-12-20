@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
   ImagePlus,
 } from 'lucide-react';
-import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, Markdown } from '@/components/shared';
+import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, Markdown, UserMenu } from '@/components/shared';
 import { MaterialGeneratorModal } from '@/components/shared/MaterialGeneratorModal';
 import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
 import { listUserTemplates, type UserTemplate } from '@/api/endpoints';
@@ -741,6 +741,7 @@ export const SlidePreview: React.FC = () => {
               </div>
             )}
           </div>
+          <UserMenu />
         </div>
       </header>
 

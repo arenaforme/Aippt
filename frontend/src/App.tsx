@@ -6,20 +6,32 @@ import { OutlineEditor } from './pages/OutlineEditor';
 import { DetailEditor } from './pages/DetailEditor';
 import { SlidePreview } from './pages/SlidePreview';
 import { Settings } from './pages/Settings';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { UserManagement } from './pages/UserManagement';
 import { useProjectStore } from './store/useProjectStore';
-import { useToast, GithubLink } from './components/shared';
+import { useAuthStore } from './store/useAuthStore';
+import { useToast, GithubLink, ProtectedRoute, PublicRoute } from './components/shared';
 
 function App() {
   const { currentProject, syncProject, error, setError } = useProjectStore();
+  const { isAuthenticated, checkAuth } = useAuthStore();
   const { show, ToastContainer } = useToast();
 
-  // 恢复项目状态
+  // 检查认证状态
   useEffect(() => {
-    const savedProjectId = localStorage.getItem('currentProjectId');
-    if (savedProjectId && !currentProject) {
-      syncProject();
+    checkAuth();
+  }, [checkAuth]);
+
+  // 恢复项目状态（仅在已登录时）
+  useEffect(() => {
+    if (isAuthenticated) {
+      const savedProjectId = localStorage.getItem('currentProjectId');
+      if (savedProjectId && !currentProject) {
+        syncProject();
+      }
     }
-  }, [currentProject, syncProject]);
+  }, [isAuthenticated, currentProject, syncProject]);
 
   // 显示全局错误
   useEffect(() => {
@@ -32,12 +44,22 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/project/:projectId/outline" element={<OutlineEditor />} />
-        <Route path="/project/:projectId/detail" element={<DetailEditor />} />
-        <Route path="/project/:projectId/preview" element={<SlidePreview />} />
+        {/* 公开路由 */}
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+
+        {/* 受保护路由 */}
+        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/project/:projectId/outline" element={<ProtectedRoute><OutlineEditor /></ProtectedRoute>} />
+        <Route path="/project/:projectId/detail" element={<ProtectedRoute><DetailEditor /></ProtectedRoute>} />
+        <Route path="/project/:projectId/preview" element={<ProtectedRoute><SlidePreview /></ProtectedRoute>} />
+
+        {/* 管理员路由 */}
+        <Route path="/admin/users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
+
+        {/* 默认重定向 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ToastContainer />

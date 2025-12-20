@@ -2,9 +2,9 @@
 Page Controller - handles page-related endpoints
 """
 import logging
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, g
 from models import db, Project, Page, PageImageVersion, Task
-from utils import success_response, error_response, not_found, bad_request
+from utils import success_response, error_response, not_found, bad_request, login_required
 from services import AIService, FileService, ProjectContext
 from services.task_manager import task_manager, generate_single_page_image_task, edit_page_image_task
 from datetime import datetime
@@ -19,11 +19,19 @@ logger = logging.getLogger(__name__)
 page_bp = Blueprint('pages', __name__, url_prefix='/api/projects')
 
 
+def _check_project_permission(project: Project, user) -> bool:
+    """检查用户是否有权限访问项目"""
+    if user.role == 'admin':
+        return True
+    return project.user_id == user.id
+
+
 @page_bp.route('/<project_id>/pages', methods=['POST'])
+@login_required
 def create_page(project_id):
     """
     POST /api/projects/{project_id}/pages - Add new page
-    
+
     Request body:
     {
         "order_index": 2,
@@ -33,10 +41,14 @@ def create_page(project_id):
     """
     try:
         project = Project.query.get(project_id)
-        
+
         if not project:
             return not_found('Project')
-        
+
+        # 权限检查
+        if not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         data = request.get_json()
         
         if not data or 'order_index' not in data:
@@ -76,16 +88,22 @@ def create_page(project_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>', methods=['DELETE'])
+@login_required
 def delete_page(project_id, page_id):
     """
     DELETE /api/projects/{project_id}/pages/{page_id} - Delete page
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
+        # 权限检查
+        project = Project.query.get(project_id)
+        if project and not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         # Delete page image if exists
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         file_service.delete_page_image(project_id, page_id)
@@ -108,10 +126,11 @@ def delete_page(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/outline', methods=['PUT'])
+@login_required
 def update_page_outline(project_id, page_id):
     """
     PUT /api/projects/{project_id}/pages/{page_id}/outline - Edit page outline
-    
+
     Request body:
     {
         "outline_content": {"title": "...", "points": [...]}
@@ -119,10 +138,15 @@ def update_page_outline(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
+        # 权限检查
+        project = Project.query.get(project_id)
+        if project and not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         data = request.get_json()
         
         if not data or 'outline_content' not in data:
@@ -146,10 +170,11 @@ def update_page_outline(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/description', methods=['PUT'])
+@login_required
 def update_page_description(project_id, page_id):
     """
     PUT /api/projects/{project_id}/pages/{page_id}/description - Edit description
-    
+
     Request body:
     {
         "description_content": {
@@ -161,10 +186,15 @@ def update_page_description(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
+        # 权限检查
+        project = Project.query.get(project_id)
+        if project and not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         data = request.get_json()
         
         if not data or 'description_content' not in data:
@@ -188,10 +218,11 @@ def update_page_description(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/generate/description', methods=['POST'])
+@login_required
 def generate_page_description(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/generate/description - Generate single page description
-    
+
     Request body:
     {
         "force_regenerate": false
@@ -199,14 +230,18 @@ def generate_page_description(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         project = Project.query.get(project_id)
         if not project:
             return not_found('Project')
-        
+
+        # 权限检查
+        if not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         data = request.get_json() or {}
         force_regenerate = data.get('force_regenerate', False)
         language = data.get('language', current_app.config.get('OUTPUT_LANGUAGE', 'zh'))
@@ -272,10 +307,11 @@ def generate_page_description(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/generate/image', methods=['POST'])
+@login_required
 def generate_page_image(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/generate/image - Generate single page image
-    
+
     Request body:
     {
         "use_template": true,
@@ -284,14 +320,18 @@ def generate_page_image(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         project = Project.query.get(project_id)
         if not project:
             return not_found('Project')
-        
+
+        # 权限检查
+        if not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         data = request.get_json() or {}
         use_template = data.get('use_template', True)
         force_regenerate = data.get('force_regenerate', False)
@@ -441,10 +481,11 @@ def generate_page_image(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/edit/image', methods=['POST'])
+@login_required
 def edit_page_image(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/edit/image - Edit page image
-    
+
     Request body (JSON or multipart/form-data):
     {
         "edit_instruction": "更改文本框样式为虚线",
@@ -454,7 +495,7 @@ def edit_page_image(project_id, page_id):
             "uploaded_image_ids": ["file1", "file2"]  // 上传的图片文件ID列表（在multipart中）
         }
     }
-    
+
     For multipart/form-data:
     - edit_instruction: text field
     - use_template: text field (true/false)
@@ -463,17 +504,21 @@ def edit_page_image(project_id, page_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
         if not page.generated_image_path:
             return bad_request("Page must have generated image first")
-        
+
         project = Project.query.get(project_id)
         if not project:
             return not_found('Project')
-        
+
+        # 权限检查
+        if not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         # Initialize services
         ai_service = AIService()
         
@@ -615,19 +660,25 @@ def edit_page_image(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/image-versions', methods=['GET'])
+@login_required
 def get_page_image_versions(project_id, page_id):
     """
     GET /api/projects/{project_id}/pages/{page_id}/image-versions - Get all image versions for a page
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
+        # 权限检查
+        project = Project.query.get(project_id)
+        if project and not _check_project_permission(project, g.current_user):
+            return error_response('无权访问此项目', 403)
+
         versions = PageImageVersion.query.filter_by(page_id=page_id)\
             .order_by(PageImageVersion.version_number.desc()).all()
-        
+
         return success_response({
             'versions': [v.to_dict() for v in versions]
         })
@@ -637,6 +688,7 @@ def get_page_image_versions(project_id, page_id):
 
 
 @page_bp.route('/<project_id>/pages/<page_id>/image-versions/<version_id>/set-current', methods=['POST'])
+@login_required
 def set_current_image_version(project_id, page_id, version_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/image-versions/{version_id}/set-current
@@ -644,12 +696,17 @@ def set_current_image_version(project_id, page_id, version_id):
     """
     try:
         page = Page.query.get(page_id)
-        
+
         if not page or page.project_id != project_id:
             return not_found('Page')
-        
+
+        # 权限检查
+        project = Project.query.get(project_id)
+        if project and not _check_project_permission(project, g.current_user):
+            return error_response('无权操作此项目', 403)
+
         version = PageImageVersion.query.get(version_id)
-        
+
         if not version or version.page_id != page_id:
             return not_found('Image Version')
         

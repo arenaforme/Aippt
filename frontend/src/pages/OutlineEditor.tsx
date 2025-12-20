@@ -18,7 +18,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button, Loading, useConfirm, useToast, AiRefineInput, FilePreviewModal, ProjectResourcesList } from '@/components/shared';
+import { Button, Loading, useConfirm, useToast, AiRefineInput, FilePreviewModal, ProjectResourcesList, UserMenu } from '@/components/shared';
 import { OutlineCard } from '@/components/outline/OutlineCard';
 import { useProjectStore } from '@/store/useProjectStore';
 import { refineOutline } from '@/api/endpoints';
@@ -221,6 +221,7 @@ export const OutlineEditor: React.FC = () => {
             >
               <span className="hidden sm:inline">下一步</span>
             </Button>
+            <UserMenu />
           </div>
         </div>
         
