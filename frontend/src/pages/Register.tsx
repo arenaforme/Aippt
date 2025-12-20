@@ -61,8 +61,20 @@ export const Register: React.FC = () => {
       return;
     }
 
-    if (!password || password.length < 6) {
-      show({ message: '密码长度不能少于 6 个字符', type: 'error' });
+    if (!password || password.length < 8) {
+      show({ message: '密码长度不能少于 8 个字符', type: 'error' });
+      return;
+    }
+
+    // 检查密码是否包含字母和数字
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasDigit = /[0-9]/.test(password);
+    if (!hasLetter) {
+      show({ message: '密码必须包含字母', type: 'error' });
+      return;
+    }
+    if (!hasDigit) {
+      show({ message: '密码必须包含数字', type: 'error' });
       return;
     }
 
@@ -133,7 +145,7 @@ export const Register: React.FC = () => {
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="密码（至少6个字符）"
+              placeholder="密码（至少8位，含字母和数字）"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10"

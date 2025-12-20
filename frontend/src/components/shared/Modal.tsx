@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/utils';
 
@@ -26,14 +27,15 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'max-w-4xl',
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+  // 使用 Portal 将 Modal 渲染到 body，避免层叠上下文问题
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto">
       {/* 遮罩 */}
       <div
         className="fixed inset-0 bg-black/50 transition-opacity duration-200"
         onClick={onClose}
       />
-      
+
       {/* 对话框 */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
@@ -55,14 +57,15 @@ export const Modal: React.FC<ModalProps> = ({
               </button>
             </div>
           )}
-          
+
           {/* 内容 */}
           <div className="px-8 py-6">
             {children}
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

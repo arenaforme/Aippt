@@ -869,3 +869,31 @@ export const resetUserPassword = async (
   );
   return response.data;
 };
+
+// ===== 系统配置 API =====
+
+export interface SystemConfigResponse {
+  configs: Record<string, string>;
+  allow_registration: boolean;
+}
+
+/**
+ * 获取系统配置（管理员）
+ */
+export const getSystemConfig = async (): Promise<ApiResponse<SystemConfigResponse>> => {
+  const response = await apiClient.get<ApiResponse<SystemConfigResponse>>('/api/admin/config');
+  return response.data;
+};
+
+/**
+ * 更新系统配置（管理员）
+ */
+export const updateSystemConfig = async (data: {
+  allow_registration?: boolean;
+}): Promise<ApiResponse<{ allow_registration: boolean }>> => {
+  const response = await apiClient.put<ApiResponse<{ allow_registration: boolean }>>(
+    '/api/admin/config',
+    data
+  );
+  return response.data;
+};

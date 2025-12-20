@@ -47,3 +47,15 @@ export const getRegistrationStatus = async (): Promise<ApiResponse> => {
   const response = await apiClient.get('/api/auth/registration-status');
   return response.data;
 };
+
+// 修改密码
+export const changePassword = async (
+  oldPassword: string,
+  newPassword: string
+): Promise<ApiResponse> => {
+  const response = await apiClient.put('/api/auth/change-password', {
+    old_password: oldPassword,
+    new_password: newPassword,
+  });
+  return response.data;
+};

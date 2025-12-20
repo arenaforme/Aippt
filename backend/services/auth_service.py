@@ -7,6 +7,7 @@ from typing import Optional, Tuple
 from flask import current_app
 
 from models import db, User, AuditLog, SystemConfig
+from utils.validators import validate_password
 
 
 class AuthService:
@@ -152,8 +153,9 @@ class AuthService:
             return False, '用户名长度必须在 3-50 个字符之间', None
 
         # 验证密码强度
-        if len(password) < 6:
-            return False, '密码长度不能少于 6 个字符', None
+        valid, error_msg = validate_password(password)
+        if not valid:
+            return False, error_msg, None
 
         # 创建用户
         user = User(username=username, role='user', status='active')
@@ -197,6 +199,58 @@ class AuthService:
             result='success'
         )
         return True
+
+    @classmethod
+    def change_password(cls, user: User, old_password: str, new_password: str,
+                        ip_address: str = None) -> Tuple[bool, str]:
+        """
+        用户修改自己的密码
+
+        Args:
+            user: 当前用户对象
+            old_password: 旧密码
+            new_password: 新密码
+            ip_address: 客户端 IP 地址
+
+        Returns:
+            (是否成功, 消息)
+        """
+        # 验证旧密码
+        if not user.check_password(old_password):
+            AuditLog.log(
+                user_id=user.id,
+                username=user.username,
+                action='change_password',
+                details='修改密码失败：旧密码错误',
+                ip_address=ip_address,
+                result='failure'
+            )
+            return False, '旧密码错误'
+
+        # 验证新密码强度
+        valid, error_msg = validate_password(new_password)
+        if not valid:
+            return False, error_msg
+
+        # 检查新旧密码是否相同
+        if old_password == new_password:
+            return False, '新密码不能与旧密码相同'
+
+        # 更新密码
+        user.set_password(new_password)
+        db.session.commit()
+
+        # 记录审计日志
+        AuditLog.log(
+            user_id=user.id,
+            username=user.username,
+            action='change_password',
+            details='用户修改密码成功',
+            ip_address=ip_address,
+            result='success'
+        )
+
+        return True, '密码修改成功'
 
     @classmethod
     def get_current_user(cls, token: str) -> Optional[User]:

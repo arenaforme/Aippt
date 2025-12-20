@@ -8,7 +8,7 @@ from .response import (
     ai_service_error,
     rate_limit_error
 )
-from .validators import validate_project_status, validate_page_status, allowed_file
+from .validators import validate_project_status, validate_page_status, allowed_file, validate_password
 from .path_utils import convert_mineru_path_to_local, find_mineru_file_with_prefix, find_file_with_prefix
 from .auth import login_required, admin_required, get_client_ip, get_token_from_request
 
@@ -29,6 +29,7 @@ __all__ = [
     'login_required',
     'admin_required',
     'get_client_ip',
-    'get_token_from_request'
+    'get_token_from_request',
+    'validate_password'
 ]
 

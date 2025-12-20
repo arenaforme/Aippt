@@ -3,7 +3,7 @@ Admin Controller - 管理员功能 API
 """
 from flask import Blueprint, request, g
 from sqlalchemy import desc
-from utils import success_response, error_response, admin_required, get_client_ip
+from utils import success_response, error_response, admin_required, get_client_ip, validate_password
 from models import db, User, Project, AuditLog, SystemConfig
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -66,8 +66,10 @@ def create_user():
     if len(username) < 3 or len(username) > 50:
         return error_response('用户名长度必须在 3-50 个字符之间', 400)
 
-    if len(password) < 6:
-        return error_response('密码长度不能少于 6 个字符', 400)
+    # 验证密码强度
+    valid, error_msg = validate_password(password)
+    if not valid:
+        return error_response(error_msg, 400)
 
     if role not in ['user', 'admin']:
         return error_response('角色必须是 user 或 admin', 400)
@@ -203,8 +205,11 @@ def reset_user_password(user_id):
         return error_response('新密码不能为空', 400)
 
     new_password = data['new_password']
-    if len(new_password) < 6:
-        return error_response('密码长度不能少于 6 个字符', 400)
+
+    # 验证密码强度
+    valid, error_msg = validate_password(new_password)
+    if not valid:
+        return error_response(error_msg, 400)
 
     user.set_password(new_password)
     user.login_attempts = 0

@@ -108,3 +108,35 @@ def get_registration_status():
     """
     allowed = SystemConfig.is_registration_allowed()
     return success_response({'allow_registration': allowed})
+
+
+@auth_bp.route('/change-password', methods=['PUT'])
+@login_required
+def change_password():
+    """
+    修改当前用户密码
+    PUT /api/auth/change-password
+    Body: { old_password, new_password }
+    """
+    data = request.get_json()
+    if not data:
+        return error_response('INVALID_REQUEST', '请求数据不能为空', 400)
+
+    old_password = data.get('old_password', '')
+    new_password = data.get('new_password', '')
+
+    if not old_password or not new_password:
+        return error_response('INVALID_REQUEST', '旧密码和新密码不能为空', 400)
+
+    ip_address = get_client_ip()
+    success, message = AuthService.change_password(
+        user=g.current_user,
+        old_password=old_password,
+        new_password=new_password,
+        ip_address=ip_address
+    )
+
+    if not success:
+        return error_response('CHANGE_PASSWORD_FAILED', message, 400)
+
+    return success_response(None, message)

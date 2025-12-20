@@ -3,9 +3,9 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2 } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu } from '@/components/shared';
-import { listUsers, createUser, updateUser, deleteUser, resetUserPassword } from '@/api/endpoints';
+import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, getSystemConfig, updateSystemConfig } from '@/api/endpoints';
 import type { AdminUser } from '@/api/endpoints';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -21,6 +21,10 @@ export const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+
+  // 注册开关状态
+  const [allowRegistration, setAllowRegistration] = useState<boolean>(true);
+  const [isTogglingRegistration, setIsTogglingRegistration] = useState(false);
 
   // 创建用户弹窗
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -60,9 +64,37 @@ export const UserManagement: React.FC = () => {
     }
   }, [roleFilter, statusFilter]); // 移除 show 依赖，避免无限循环
 
+  // 加载系统配置
+  const loadSystemConfig = useCallback(async () => {
+    try {
+      const response = await getSystemConfig();
+      if (response.data) {
+        setAllowRegistration(response.data.allow_registration);
+      }
+    } catch (error: any) {
+      console.error('加载系统配置失败:', error);
+    }
+  }, []);
+
+  // 切换注册开关
+  const handleToggleRegistration = async () => {
+    setIsTogglingRegistration(true);
+    try {
+      const newValue = !allowRegistration;
+      await updateSystemConfig({ allow_registration: newValue });
+      setAllowRegistration(newValue);
+      show({ message: newValue ? '已开启用户注册' : '已关闭用户注册', type: 'success' });
+    } catch (error: any) {
+      show({ message: '更新失败: ' + (error.response?.data?.error?.message || error.message), type: 'error' });
+    } finally {
+      setIsTogglingRegistration(false);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
-  }, [loadUsers]);
+    loadSystemConfig();
+  }, [loadUsers, loadSystemConfig]);
 
   // 过滤用户（前端搜索）
   const filteredUsers = users.filter(u =>
@@ -227,9 +259,30 @@ export const UserManagement: React.FC = () => {
             </div>
           </div>
 
-          {/* 用户统计 */}
-          <div className="mb-4 text-sm text-gray-500">
-            共 {total} 个用户，显示 {filteredUsers.length} 个
+          {/* 用户统计和系统设置 */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+            <div className="text-sm text-gray-500">
+              共 {total} 个用户，显示 {filteredUsers.length} 个
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">允许用户注册</span>
+              <button
+                onClick={handleToggleRegistration}
+                disabled={isTogglingRegistration}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  allowRegistration ? 'bg-banana-500' : 'bg-gray-300'
+                } ${isTogglingRegistration ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    allowRegistration ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-xs ${allowRegistration ? 'text-green-600' : 'text-gray-500'}`}>
+                {allowRegistration ? '已开启' : '已关闭'}
+              </span>
+            </div>
           </div>
 
           {/* 用户列表表格 */}
@@ -382,7 +435,10 @@ const CreateUserModal: React.FC<{
   <Modal isOpen={isOpen} onClose={onClose} title="创建新用户">
     <div className="space-y-4">
       <Input label="用户名" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="请输入用户名" />
-      <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
+      <div>
+        <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
+        <p className="mt-1 text-xs text-gray-500">密码至少8位，必须包含字母和数字</p>
+      </div>
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">角色</label>
         <select value={role} onChange={(e) => setRole(e.target.value as 'user' | 'admin')} className="w-full px-3 py-2 border border-gray-200 rounded-lg">
@@ -410,7 +466,10 @@ const ResetPasswordModal: React.FC<{
 }> = ({ isOpen, onClose, username, password, setPassword, onReset, isResetting }) => (
   <Modal isOpen={isOpen} onClose={onClose} title={`重置密码 - ${username}`}>
     <div className="space-y-4">
-      <Input label="新密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入新密码" />
+      <div>
+        <Input label="新密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入新密码" />
+        <p className="mt-1 text-xs text-gray-500">密码至少8位，必须包含字母和数字</p>
+      </div>
       <div className="flex justify-end gap-3 pt-4">
         <Button variant="ghost" onClick={onClose}>取消</Button>
         <Button variant="primary" onClick={onReset} loading={isResetting}>确认重置</Button>
