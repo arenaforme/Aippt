@@ -118,7 +118,18 @@ def update_user(user_id):
         new_role = data['role']
         if new_role not in ['user', 'admin']:
             return error_response('角色必须是 user 或 admin', 400)
+
+        # 业务规则1：不能修改自己的角色
+        if user.id == g.current_user.id:
+            return error_response('不能修改自己的角色', 400)
+
         if user.role != new_role:
+            # 业务规则2：系统至少保留一个管理员
+            if user.role == 'admin' and new_role == 'user':
+                admin_count = User.query.filter_by(role='admin').count()
+                if admin_count <= 1:
+                    return error_response('系统至少需要保留一个管理员', 400)
+
             changes.append(f'角色: {user.role} -> {new_role}')
             user.role = new_role
 
