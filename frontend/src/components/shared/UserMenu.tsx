@@ -4,7 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff } from 'lucide-react';
+import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Modal } from './Modal';
 import { Input } from './Input';
@@ -172,6 +172,28 @@ export const UserMenu: React.FC = () => {
               >
                 <Users size={16} />
                 用户管理
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/admin/projects');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              >
+                <FolderOpen size={16} />
+                项目管理
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/admin/audit-logs');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              >
+                <FileText size={16} />
+                审计日志
               </button>
             </div>
           )}

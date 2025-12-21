@@ -20,6 +20,7 @@ class User(db.Model):
     status = db.Column(db.String(20), default='active', index=True)  # active/disabled
     login_attempts = db.Column(db.Integer, default=0)
     locked_until = db.Column(db.DateTime, nullable=True)
+    must_change_password = db.Column(db.Boolean, default=False)  # 首次登录强制修改密码
     last_login_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -52,6 +53,7 @@ class User(db.Model):
             'username': self.username,
             'role': self.role,
             'status': self.status,
+            'must_change_password': self.must_change_password,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login_at': self.last_login_at.isoformat() if self.last_login_at else None,
         }

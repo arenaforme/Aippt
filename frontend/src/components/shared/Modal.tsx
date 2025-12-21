@@ -9,6 +9,7 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  hideCloseButton?: boolean;  // 隐藏关闭按钮（用于强制弹窗）
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,6 +18,7 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   size = 'md',
+  hideCloseButton = false,
 }) => {
   if (!isOpen) return null;
 
@@ -33,7 +35,7 @@ export const Modal: React.FC<ModalProps> = ({
       {/* 遮罩 */}
       <div
         className="fixed inset-0 bg-black/50 transition-opacity duration-200"
-        onClick={onClose}
+        onClick={hideCloseButton ? undefined : onClose}
       />
 
       {/* 对话框 */}
@@ -49,12 +51,14 @@ export const Modal: React.FC<ModalProps> = ({
           {title && (
             <div className="flex items-center justify-between px-8 py-6 bg-banana-50 rounded-t-panel">
               <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
-              <button
-                onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
-              >
-                <X size={24} />
-              </button>
+              {!hideCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              )}
             </div>
           )}
 

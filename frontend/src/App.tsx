@@ -9,9 +9,11 @@ import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { UserManagement } from './pages/UserManagement';
+import { AdminProjects } from './pages/AdminProjects';
+import { AuditLogs } from './pages/AuditLogs';
 import { useProjectStore } from './store/useProjectStore';
 import { useAuthStore } from './store/useAuthStore';
-import { useToast, GithubLink, ProtectedRoute, PublicRoute } from './components/shared';
+import { useToast, GithubLink, ProtectedRoute, PublicRoute, ForcePasswordChangeModal } from './components/shared';
 
 function App() {
   const { currentProject, syncProject, error, setError } = useProjectStore();
@@ -58,12 +60,15 @@ function App() {
 
         {/* 管理员路由 */}
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
+        <Route path="/admin/projects" element={<ProtectedRoute requireAdmin><AdminProjects /></ProtectedRoute>} />
+        <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
 
         {/* 默认重定向 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ToastContainer />
       <GithubLink />
+      <ForcePasswordChangeModal />
     </BrowserRouter>
   );
 }

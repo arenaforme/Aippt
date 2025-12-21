@@ -16,14 +16,35 @@ logger = logging.getLogger(__name__)
 project_bp = Blueprint('projects', __name__, url_prefix='/api/projects')
 
 
-def _check_project_permission(project: Project, user) -> bool:
+def _check_project_permission(project: Project, user, write_access: bool = False) -> bool:
     """
     检查用户是否有权限访问项目
-    管理员可以访问所有项目，普通用户只能访问自己的项目
+
+    Args:
+        project: 项目对象
+        user: 当前用户
+        write_access: 是否需要写权限（修改项目内容）
+
+    Returns:
+        bool: 是否有权限
+
+    权限规则：
+    - 管理员可以查看和删除所有项目，但不能修改其他用户的项目
+    - 普通用户只能访问自己的项目
     """
-    if user.role == 'admin':
+    # 项目所有者拥有所有权限
+    if project.user_id == user.id:
         return True
-    return project.user_id == user.id
+
+    # 管理员权限检查
+    if user.role == 'admin':
+        # 管理员需要写权限时，只能操作自己的项目
+        if write_access:
+            return False
+        # 管理员可以查看和删除其他用户的项目
+        return True
+
+    return False
 
 
 def _get_project_reference_files_content(project_id: str) -> list:
@@ -252,12 +273,12 @@ def update_project(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权修改此项目', 403)
 
         data = request.get_json()
-        
+
         # Update idea_prompt if provided
         if 'idea_prompt' in data:
             project.idea_prompt = data['idea_prompt']
@@ -337,8 +358,8 @@ def generate_outline(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权操作此项目', 403)
 
         # Initialize AI service
@@ -451,8 +472,8 @@ def generate_from_description(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权操作此项目', 403)
 
         if project.creation_type != 'descriptions':
@@ -566,8 +587,8 @@ def generate_descriptions(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权操作此项目', 403)
 
         if project.status not in ['OUTLINE_GENERATED', 'DRAFT', 'DESCRIPTIONS_GENERATED']:
@@ -662,8 +683,8 @@ def generate_images(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权操作此项目', 403)
 
         # if project.status not in ['DESCRIPTIONS_GENERATED', 'OUTLINE_GENERATED']:
@@ -784,21 +805,21 @@ def refine_outline(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权操作此项目', 403)
 
         data = request.get_json()
 
         if not data or not data.get('user_requirement'):
             return bad_request("user_requirement is required")
-        
+
         user_requirement = data['user_requirement']
-        
+
         # IMPORTANT: Expire all cached objects to ensure we get fresh data from database
         # This prevents issues when multiple refine operations are called in sequence
         db.session.expire_all()
-        
+
         # Get current outline from pages
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
         
@@ -943,19 +964,19 @@ def refine_descriptions(project_id):
         if not project:
             return not_found('Project')
 
-        # 权限检查
-        if not _check_project_permission(project, g.current_user):
+        # 权限检查（需要写权限）
+        if not _check_project_permission(project, g.current_user, write_access=True):
             return error_response('无权操作此项目', 403)
 
         data = request.get_json()
 
         if not data or not data.get('user_requirement'):
             return bad_request("user_requirement is required")
-        
+
         user_requirement = data['user_requirement']
-        
+
         db.session.expire_all()
-        
+
         # Get current pages
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
         

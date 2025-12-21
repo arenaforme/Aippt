@@ -238,6 +238,7 @@ class AuthService:
 
         # 更新密码
         user.set_password(new_password)
+        user.must_change_password = False  # 清除强制修改密码标志
         db.session.commit()
 
         # 记录审计日志

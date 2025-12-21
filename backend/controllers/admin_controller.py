@@ -77,7 +77,7 @@ def create_user():
     if User.query.filter_by(username=username).first():
         return error_response('用户名已存在', 400)
 
-    user = User(username=username, role=role, status='active')
+    user = User(username=username, role=role, status='active', must_change_password=True)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
@@ -339,6 +339,87 @@ def list_audit_logs():
         'logs': [log.to_dict() for log in logs],
         'total': total
     })
+
+
+# ==================== 项目管理（管理员） ====================
+
+@admin_bp.route('/projects', methods=['GET'])
+@admin_required
+def list_all_projects():
+    """
+    GET /api/admin/projects - 获取所有项目列表（管理员）
+    Query params:
+    - limit: 每页数量 (default: 20)
+    - offset: 偏移量 (default: 0)
+    - user_id: 按用户ID过滤
+    - is_orphaned: 按孤立状态过滤 (true/false)
+    - search: 搜索项目标题
+    """
+    limit = request.args.get('limit', 20, type=int)
+    offset = request.args.get('offset', 0, type=int)
+    user_id = request.args.get('user_id', '').strip()
+    is_orphaned = request.args.get('is_orphaned', '').strip().lower()
+    search = request.args.get('search', '').strip()
+
+    query = Project.query
+
+    if user_id:
+        query = query.filter(Project.user_id == user_id)
+    if is_orphaned == 'true':
+        query = query.filter(Project.is_orphaned == True)
+    elif is_orphaned == 'false':
+        query = query.filter(Project.is_orphaned == False)
+    if search:
+        # Project 模型没有 title 列，使用 idea_prompt 进行搜索
+        query = query.filter(Project.idea_prompt.ilike(f'%{search}%'))
+
+    total = query.count()
+    projects = query.order_by(desc(Project.updated_at)).limit(limit).offset(offset).all()
+
+    # 获取项目所有者信息
+    result = []
+    for p in projects:
+        data = p.to_dict()
+        if p.owner:
+            data['owner_username'] = p.owner.username
+        else:
+            data['owner_username'] = None
+        result.append(data)
+
+    return success_response({
+        'projects': result,
+        'total': total
+    })
+
+
+@admin_bp.route('/projects/<project_id>', methods=['DELETE'])
+@admin_required
+def delete_project(project_id):
+    """
+    DELETE /api/admin/projects/<project_id> - 管理员删除项目
+    """
+    project = Project.query.get(project_id)
+    if not project:
+        return error_response('项目不存在', 404)
+
+    title = project.title
+    owner_username = project.owner.username if project.owner else '(孤立项目)'
+
+    db.session.delete(project)
+    db.session.commit()
+
+    AuditLog.log(
+        user_id=g.current_user.id,
+        username=g.current_user.username,
+        action=AuditLog.ACTION_PROJECT_DELETE,
+        target_type='project',
+        target_id=project_id,
+        details=f'删除项目: {title}, 原所有者: {owner_username}',
+        ip_address=get_client_ip(),
+        result='success'
+    )
+
+    return success_response(None, f'项目 "{title}" 已删除')
 
 
 # ==================== 孤立项目管理 ====================

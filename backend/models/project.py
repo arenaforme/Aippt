@@ -36,10 +36,19 @@ class Project(db.Model):
     materials = db.relationship('Material', back_populates='project', lazy='dynamic',
                            cascade='all, delete-orphan')
     
+    @property
+    def title(self):
+        """生成项目标题：从 idea_prompt 截取前30个字符"""
+        if self.idea_prompt:
+            return self.idea_prompt[:30] + ('...' if len(self.idea_prompt) > 30 else '')
+        return '未命名项目'
+
     def to_dict(self, include_pages=False):
         """Convert to dictionary"""
         data = {
             'project_id': self.id,
+            'id': self.id,  # 兼容前端 AdminProject 接口
+            'title': self.title,  # 添加 title 字段
             'user_id': self.user_id,
             'owner_username': self.owner.username if self.owner else None,
             'is_orphaned': self.is_orphaned,

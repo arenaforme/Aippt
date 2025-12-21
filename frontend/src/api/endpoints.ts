@@ -897,3 +897,92 @@ export const updateSystemConfig = async (data: {
   );
   return response.data;
 };
+
+// ===== 管理员项目管理 API =====
+
+export interface AdminProject {
+  id: string;
+  title: string;
+  user_id: string | null;
+  owner_username: string | null;
+  is_orphaned: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * 获取所有项目列表（管理员）
+ */
+export const listAllProjects = async (params?: {
+  limit?: number;
+  offset?: number;
+  user_id?: string;
+  is_orphaned?: boolean;
+  search?: string;
+}): Promise<ApiResponse<{ projects: AdminProject[]; total: number }>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+  if (params?.user_id) searchParams.append('user_id', params.user_id);
+  if (params?.is_orphaned !== undefined) {
+    searchParams.append('is_orphaned', params.is_orphaned.toString());
+  }
+  if (params?.search) searchParams.append('search', params.search);
+
+  const response = await apiClient.get<ApiResponse<{ projects: AdminProject[]; total: number }>>(
+    `/api/admin/projects?${searchParams.toString()}`
+  );
+  return response.data;
+};
+
+/**
+ * 删除项目（管理员）
+ */
+export const adminDeleteProject = async (projectId: string): Promise<ApiResponse<null>> => {
+  const response = await apiClient.delete<ApiResponse<null>>(`/api/admin/projects/${projectId}`);
+  return response.data;
+};
+
+// ===== 审计日志 API =====
+
+export interface AuditLogEntry {
+  id: string;
+  user_id: string | null;
+  username: string;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  details: string | null;
+  ip_address: string | null;
+  result: 'success' | 'failure';
+  created_at: string;
+}
+
+/**
+ * 获取审计日志列表（管理员）
+ */
+export const listAuditLogs = async (params?: {
+  limit?: number;
+  offset?: number;
+  user_id?: string;
+  username?: string;
+  action?: string;
+  result?: string;
+  start_date?: string;
+  end_date?: string;
+}): Promise<ApiResponse<{ logs: AuditLogEntry[]; total: number }>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+  if (params?.user_id) searchParams.append('user_id', params.user_id);
+  if (params?.username) searchParams.append('username', params.username);
+  if (params?.action) searchParams.append('action', params.action);
+  if (params?.result) searchParams.append('result', params.result);
+  if (params?.start_date) searchParams.append('start_date', params.start_date);
+  if (params?.end_date) searchParams.append('end_date', params.end_date);
+
+  const response = await apiClient.get<ApiResponse<{ logs: AuditLogEntry[]; total: number }>>(
+    `/api/admin/audit-logs?${searchParams.toString()}`
+  );
+  return response.data;
+};

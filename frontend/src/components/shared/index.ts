@@ -22,5 +22,6 @@ export { ImagePreviewList } from './ImagePreviewList';
 export { ProjectResourcesList } from './ProjectResourcesList';
 export { ProtectedRoute, PublicRoute } from './ProtectedRoute';
 export { UserMenu } from './UserMenu';
+export { ForcePasswordChangeModal } from './ForcePasswordChangeModal';
 
 

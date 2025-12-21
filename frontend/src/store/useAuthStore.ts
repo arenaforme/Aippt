@@ -12,6 +12,7 @@ export interface User {
   username: string;
   role: 'user' | 'admin';
   status: 'active' | 'disabled';
+  must_change_password?: boolean;  // 首次登录强制修改密码标志
   created_at?: string;
   last_login_at?: string;
 }
@@ -24,11 +25,13 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  mustChangePassword: boolean;  // 是否需要强制修改密码
 
   // Actions
   setToken: (token: string | null) => void;
   setUser: (user: User | null) => void;
   setError: (error: string | null) => void;
+  setMustChangePassword: (value: boolean) => void;
 
   // 认证操作
   login: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
@@ -51,11 +54,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      mustChangePassword: false,
 
       // Setters
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
       setError: (error) => set({ error }),
+      setMustChangePassword: (value) => set({ mustChangePassword: value }),
 
       // 登录
       login: async (username, password, rememberMe = false) => {
@@ -63,11 +68,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.login(username, password, rememberMe);
           if (response.data?.token && response.data?.user) {
+            const user = response.data.user;
             set({
               token: response.data.token,
-              user: response.data.user,
+              user: user,
               isAuthenticated: true,
               isLoading: false,
+              mustChangePassword: user.must_change_password || false,
             });
             return true;
           }
@@ -134,7 +141,12 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await authApi.getCurrentUser();
           if (response.data?.user) {
-            set({ user: response.data.user, isAuthenticated: true });
+            const user = response.data.user;
+            set({
+              user: user,
+              isAuthenticated: true,
+              mustChangePassword: user.must_change_password || false,
+            });
             return true;
           }
           get().clearAuth();
@@ -158,6 +170,7 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           isAuthenticated: false,
           error: null,
+          mustChangePassword: false,
         });
       },
     }),
