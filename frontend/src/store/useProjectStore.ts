@@ -14,11 +14,14 @@ interface ProjectState {
   pageGeneratingTasks: Record<string, string>;
   // 每个页面的描述生成状态 (pageId -> boolean)
   pageDescriptionGeneratingTasks: Record<string, boolean>;
+  // 最近一次可编辑 PPTX 导出的下载链接
+  lastEditablePPTXUrl: string | null;
 
   // Actions
   setCurrentProject: (project: Project | null) => void;
   setGlobalLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
+  setLastEditablePPTXUrl: (url: string | null) => void;
   
   // 项目操作
   initializeProject: (type: 'idea' | 'outline' | 'description', content: string, templateImage?: File) => Promise<void>;
@@ -55,6 +58,7 @@ interface ProjectState {
   // 导出
   exportPPTX: () => Promise<void>;
   exportPDF: () => Promise<void>;
+  exportEditablePPTX: () => Promise<void>;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => {
@@ -94,11 +98,13 @@ const debouncedUpdatePage = debounce(
   error: null,
   pageGeneratingTasks: {},
   pageDescriptionGeneratingTasks: {},
+  lastEditablePPTXUrl: localStorage.getItem('lastEditablePPTXUrl'),
 
   // Setters
   setCurrentProject: (project) => set({ currentProject: project }),
   setGlobalLoading: (loading) => set({ isGlobalLoading: loading }),
   setError: (error) => set({ error }),
+  setLastEditablePPTXUrl: (url) => set({ lastEditablePPTXUrl: url }),
 
   // 初始化项目
   initializeProject: async (type, content, templateImage) => {
@@ -834,6 +840,93 @@ const debouncedUpdatePage = debounce(
       set({ error: error.message || '导出失败' });
     } finally {
       set({ isGlobalLoading: false });
+    }
+  },
+
+  // 导出可编辑 PPTX（异步任务）
+  exportEditablePPTX: async () => {
+    const { currentProject } = get();
+    if (!currentProject) {
+      set({ error: '项目未加载，请稍后重试' });
+      return;
+    }
+
+    set({ isGlobalLoading: true, error: null });
+    try {
+      // 启动异步导出任务
+      const response = await api.exportEditablePPTX(currentProject.id);
+      const taskId = response.data?.task_id;
+
+      if (!taskId) {
+        throw new Error('导出任务创建失败');
+      }
+
+      // 轮询任务状态
+      const pollInterval = 2000; // 2秒
+      const maxAttempts = 150; // 最多5分钟
+      let attempts = 0;
+
+      const poll = async (): Promise<void> => {
+        attempts++;
+        const statusResponse = await api.getEditablePPTXStatus(
+          currentProject.id,
+          taskId
+        );
+        const status = statusResponse.data?.status;
+        const progress = statusResponse.data?.progress;
+
+        // 更新进度
+        if (progress) {
+          set({
+            taskProgress: {
+              total: progress.total,
+              completed: progress.completed,
+            },
+          });
+        }
+
+        if (status === 'COMPLETED') {
+          const downloadUrl =
+            statusResponse.data?.download_url ||
+            statusResponse.data?.download_url_absolute;
+
+          if (downloadUrl) {
+            // 保存下载链接到 state 和 localStorage
+            set({ lastEditablePPTXUrl: downloadUrl });
+            localStorage.setItem('lastEditablePPTXUrl', downloadUrl);
+            // 使用 <a> 标签触发下载
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = '';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } else {
+            throw new Error('导出链接获取失败');
+          }
+          return;
+        }
+
+        if (status === 'FAILED') {
+          throw new Error(
+            statusResponse.data?.error || '导出失败'
+          );
+        }
+
+        if (attempts >= maxAttempts) {
+          throw new Error('导出超时，请稍后重试');
+        }
+
+        // 继续轮询
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        return poll();
+      };
+
+      await poll();
+    } catch (error: any) {
+      set({ error: error.message || '导出失败' });
+    } finally {
+      set({ isGlobalLoading: false, taskProgress: null });
     }
   },
 };});

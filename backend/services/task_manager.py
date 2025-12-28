@@ -765,3 +765,96 @@ def generate_material_image_task(task_id: str, project_id: str, prompt: str,
                 temp_path = Path(temp_dir)
                 if temp_path.exists():
                     shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def export_editable_ppt_task(
+    task_id: str,
+    project_id: str,
+    image_paths: list,
+    output_path: str,
+    api_key: str,
+    secret_key: str,
+    app=None
+):
+    """
+    后台任务：导出可编辑 PPT
+    使用 OCR 识别图片中的文字，生成可编辑的 PPT 文件
+
+    Args:
+        task_id: 任务 ID
+        project_id: 项目 ID
+        image_paths: 图片路径列表
+        output_path: 输出文件路径
+        api_key: 百度 OCR API Key
+        secret_key: 百度 OCR Secret Key
+        app: Flask 应用实例
+    """
+    if app is None:
+        raise ValueError("Flask app instance must be provided")
+
+    with app.app_context():
+        try:
+            task = Task.query.get(task_id)
+            if not task:
+                return
+
+            task.status = 'PROCESSING'
+            task.set_progress({
+                "total": len(image_paths),
+                "completed": 0,
+                "failed": 0,
+                "stage": "initializing"
+            })
+            db.session.commit()
+
+            from services.ppt_converter import PPTConverter
+
+            converter = PPTConverter(
+                api_key=api_key,
+                secret_key=secret_key
+            )
+
+            # 更新进度：开始 OCR 识别
+            task.set_progress({
+                "total": len(image_paths),
+                "completed": 0,
+                "failed": 0,
+                "stage": "ocr_recognition"
+            })
+            db.session.commit()
+
+            result = converter.convert_images(
+                image_paths=image_paths,
+                output_path=output_path,
+                remove_text=True
+            )
+
+            task.status = 'COMPLETED'
+            task.completed_at = datetime.utcnow()
+            task.set_progress({
+                "total": result.slides_count,
+                "completed": result.slides_count,
+                "failed": 0,
+                "stage": "completed",
+                "text_blocks_count": result.text_blocks_count,
+                "output_path": str(result.output_path)
+            })
+            db.session.commit()
+
+            logger.info(
+                f"Task {task_id} COMPLETED - "
+                f"{result.slides_count} slides, "
+                f"{result.text_blocks_count} text blocks"
+            )
+
+        except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
+            logger.error(f"Task {task_id} FAILED: {error_detail}")
+
+            task = Task.query.get(task_id)
+            if task:
+                task.status = 'FAILED'
+                task.error_message = str(e)
+                task.completed_at = datetime.utcnow()
+                db.session.commit()

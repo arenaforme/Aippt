@@ -2,13 +2,25 @@
 Google GenAI SDK implementation for image generation
 """
 import logging
+import os
 from typing import Optional, List
+import httpx
 from google import genai
 from google.genai import types
 from PIL import Image
 from .base import ImageProvider
 
 logger = logging.getLogger(__name__)
+
+# 在模块加载时设置 httpx 默认代理
+_proxy_url = os.getenv('HTTPS_PROXY') or os.getenv('HTTP_PROXY') or os.getenv('https_proxy') or os.getenv('http_proxy')
+if _proxy_url:
+    logger.info(f"Setting default httpx proxy: {_proxy_url}")
+    # 通过环境变量让 httpx 自动使用代理
+    os.environ.setdefault('HTTP_PROXY', _proxy_url)
+    os.environ.setdefault('HTTPS_PROXY', _proxy_url)
+    os.environ.setdefault('http_proxy', _proxy_url)
+    os.environ.setdefault('https_proxy', _proxy_url)
 
 
 class GenAIImageProvider(ImageProvider):
@@ -17,14 +29,21 @@ class GenAIImageProvider(ImageProvider):
     def __init__(self, api_key: str, api_base: str = None, model: str = "gemini-3-pro-image-preview"):
         """
         Initialize GenAI image provider
-        
+
         Args:
             api_key: Google API key
             api_base: API base URL (for proxies like aihubmix)
             model: Model name to use
         """
+        # 配置 HTTP 选项
+        # 注意：HttpOptions.timeout 单位是毫秒，5分钟 = 300000毫秒
+        http_options = types.HttpOptions(
+            base_url=api_base,
+            timeout=300000,  # 5分钟超时（毫秒），图片生成需要较长时间
+        ) if api_base else types.HttpOptions(timeout=300000)
+
         self.client = genai.Client(
-            http_options=types.HttpOptions(base_url=api_base) if api_base else None,
+            http_options=http_options,
             api_key=api_key
         )
         self.model = model

@@ -14,6 +14,16 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
     mv /root/.local/bin/uv /usr/local/bin/uv && \
     chmod +x /usr/local/bin/uv
 
+# 下载中文字体（用于可编辑 PPT 导出）
+# 使用 Google Fonts GitHub 仓库下载完整字体（非子集版本）
+RUN mkdir -p /app/backend/fonts && \
+    curl -L -o /app/backend/fonts/NotoSansSC-Regular.ttf \
+    "https://github.com/notofonts/noto-cjk/raw/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf" && \
+    curl -L -o /app/backend/fonts/NotoSerifSC-Regular.ttf \
+    "https://github.com/notofonts/noto-cjk/raw/main/Serif/OTF/SimplifiedChinese/NotoSerifCJKsc-Regular.otf" && \
+    curl -L -o /app/backend/fonts/LXGWWenKai-Regular.ttf \
+    "https://github.com/lxgw/LxgwWenKai/releases/download/v1.330/LXGWWenKai-Regular.ttf"
+
 # 复制项目配置文件
 COPY pyproject.toml ./
 COPY uv.lock* ./

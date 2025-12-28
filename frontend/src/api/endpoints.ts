@@ -429,6 +429,56 @@ export const exportPDF = async (
   return response.data;
 };
 
+/**
+ * 导出为可编辑 PPTX（异步任务）
+ */
+export const exportEditablePPTX = async (
+  projectId: string,
+  filename?: string
+): Promise<ApiResponse<{ task_id: string; message: string }>> => {
+  const response = await apiClient.post<
+    ApiResponse<{ task_id: string; message: string }>
+  >(`/api/projects/${projectId}/export/editable-pptx`, { filename });
+  return response.data;
+};
+
+/**
+ * 获取可编辑 PPTX 导出任务状态
+ */
+export const getEditablePPTXStatus = async (
+  projectId: string,
+  taskId: string
+): Promise<ApiResponse<{
+  task_id: string;
+  status: string;
+  progress?: {
+    total: number;
+    completed: number;
+    failed: number;
+    stage?: string;
+  };
+  download_url?: string;
+  download_url_absolute?: string;
+  error?: string;
+}>> => {
+  const response = await apiClient.get<
+    ApiResponse<{
+      task_id: string;
+      status: string;
+      progress?: {
+        total: number;
+        completed: number;
+        failed: number;
+        stage?: string;
+      };
+      download_url?: string;
+      download_url_absolute?: string;
+      error?: string;
+    }>
+  >(`/api/projects/${projectId}/export/editable-pptx/${taskId}`);
+  return response.data;
+};
+
 // ===== 素材生成 =====
 
 /**

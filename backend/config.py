@@ -61,6 +61,10 @@ class Config:
     # MinerU 文件解析服务配置
     MINERU_TOKEN = os.getenv('MINERU_TOKEN', '')
     MINERU_API_BASE = os.getenv('MINERU_API_BASE', 'https://mineru.net')
+
+    # 百度 OCR 配置（用于可编辑 PPT 导出）
+    BAIDU_OCR_API_KEY = os.getenv('BAIDU_OCR_API_KEY', '')
+    BAIDU_OCR_SECRET_KEY = os.getenv('BAIDU_OCR_SECRET_KEY', '')
     
     # 图片识别模型配置
     IMAGE_CAPTION_MODEL = os.getenv('IMAGE_CAPTION_MODEL', 'gemini-3-flash-preview')
