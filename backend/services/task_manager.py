@@ -774,6 +774,7 @@ def export_editable_ppt_task(
     output_path: str,
     api_key: str,
     secret_key: str,
+    reference_text: str = None,
     app=None
 ):
     """
@@ -787,6 +788,7 @@ def export_editable_ppt_task(
         output_path: 输出文件路径
         api_key: 百度 OCR API Key
         secret_key: 百度 OCR Secret Key
+        reference_text: 参考文本（用于校正 OCR 结果）
         app: Flask 应用实例
     """
     if app is None:
@@ -812,7 +814,8 @@ def export_editable_ppt_task(
 
             converter = PPTConverter(
                 api_key=api_key,
-                secret_key=secret_key
+                secret_key=secret_key,
+                reference_text=reference_text
             )
 
             # 定义进度回调函数

@@ -13,6 +13,7 @@ from .ocr_engine import OCREngine
 from .font_mapper import FontMapper
 from .ppt_generator import PPTGenerator
 from .llm_filter import get_llm_filter
+from .text_corrector import TextCorrector, load_reference_text
 from .utils.image_utils import load_image, remove_text_regions
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,8 @@ class PPTConverter:
         self,
         api_key: str = None,
         secret_key: str = None,
-        confidence_threshold: float = 0.6
+        confidence_threshold: float = 0.6,
+        reference_text: str = None
     ):
         self.ocr_engine = OCREngine(
             api_key=api_key,
@@ -33,6 +35,13 @@ class PPTConverter:
         )
         self.font_mapper = FontMapper()
         self.confidence_threshold = confidence_threshold
+        # 文本校正器（如果提供了参考文本）
+        self.text_corrector = None
+        if reference_text:
+            self.text_corrector = TextCorrector(reference_text)
+            logger.info(f"已创建文本校正器，参考文本长度: {len(reference_text)} 字符")
+        else:
+            logger.info("未提供参考文本，跳过文本校正功能")
 
     def convert_images(
         self,
@@ -152,6 +161,20 @@ class PPTConverter:
             # 注意：OCR 文字修复功能已禁用
             # 原因：DeepSeek 会参考其他文字块内容来"补全"当前行，导致重复文字
             # 如需启用，需要更严格的验证逻辑或改用单条处理模式
+
+        # 文本校正（使用参考文本修复 OCR 遗漏和错别字）
+        if self.text_corrector and text_blocks:
+            if progress_callback:
+                progress_callback({
+                    'current_page': index,
+                    'stage': 'text_correction',
+                    'stage_name': f'第 {index} 页文本校正中...'
+                })
+            logger.info(f"第 {index} 页开始文本校正...")
+            text_blocks = self.text_corrector.correct_text_blocks(
+                text_blocks, page_num=index
+            )
+            logger.info(f"第 {index} 页文本校正完成")
 
         # 处理背景图片
         if remove_text and text_blocks:

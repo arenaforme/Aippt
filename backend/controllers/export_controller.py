@@ -12,6 +12,60 @@ import uuid
 
 export_bp = Blueprint('export', __name__, url_prefix='/api/projects')
 
+import logging
+logger = logging.getLogger(__name__)
+
+
+def _build_reference_text_from_pages(pages) -> str:
+    """
+    从页面列表构建参考文本，用于 OCR 结果校正
+
+    格式：
+    ##第1页
+    页面标题
+    文本内容1
+    文本内容2
+    ...
+
+    ##第2页
+    ...
+    """
+    lines = []
+    for page in pages:
+        desc_content = page.get_description_content()
+        if not desc_content:
+            continue
+
+        page_num = page.order_index + 1
+        lines.append(f"##第{page_num}页")
+
+        # 提取标题
+        title = desc_content.get('title', '')
+        if title:
+            lines.append(title)
+
+        # 提取文本内容
+        text_content = desc_content.get('text_content', [])
+        if isinstance(text_content, list):
+            for text in text_content:
+                if text:
+                    lines.append(text)
+        elif text_content:
+            lines.append(str(text_content))
+
+        # 提取其他可能的文本字段
+        text = desc_content.get('text', '')
+        if text and text not in lines:
+            lines.append(text)
+
+        lines.append('')  # 空行分隔
+
+    result = '\n'.join(lines)
+    logger.info(f"构建参考文本完成，共 {len(pages)} 页，内容长度: {len(result)} 字符")
+    if result:
+        logger.debug(f"参考文本内容:\n{result[:500]}...")  # 只打印前500字符
+    return result
+
 
 @export_bp.route('/<project_id>/export/pptx', methods=['GET'])
 def export_pptx(project_id):
@@ -213,6 +267,13 @@ def export_editable_pptx(project_id):
         if not image_paths:
             return bad_request("No generated images found for project")
 
+        # 构建参考文本（从页面描述中提取）
+        reference_text = _build_reference_text_from_pages(pages)
+        if reference_text:
+            logger.info(f"已构建参考文本，将用于校正 OCR 结果")
+        else:
+            logger.warning(f"未能构建参考文本，页面可能没有描述内容")
+
         # 确定导出目录和文件名
         exports_dir = file_service._get_exports_dir(project_id)
 
@@ -247,6 +308,7 @@ def export_editable_pptx(project_id):
             output_path=output_path,
             api_key=api_key,
             secret_key=secret_key,
+            reference_text=reference_text,
             app=current_app._get_current_object()
         )
 

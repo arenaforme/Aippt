@@ -11,6 +11,7 @@ import { Register } from './pages/Register';
 import { UserManagement } from './pages/UserManagement';
 import { AdminProjects } from './pages/AdminProjects';
 import { AuditLogs } from './pages/AuditLogs';
+import PdfToPptx from './pages/PdfToPptx';
 import { useProjectStore } from './store/useProjectStore';
 import { useAuthStore } from './store/useAuthStore';
 import { useToast, GithubLink, ProtectedRoute, PublicRoute, ForcePasswordChangeModal } from './components/shared';
@@ -62,6 +63,9 @@ function App() {
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="/admin/projects" element={<ProtectedRoute requireAdmin><AdminProjects /></ProtectedRoute>} />
         <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
+
+        {/* 工具路由 */}
+        <Route path="/tools/pdf-to-pptx" element={<ProtectedRoute><PdfToPptx /></ProtectedRoute>} />
 
         {/* 默认重定向 */}
         <Route path="*" element={<Navigate to="/" replace />} />

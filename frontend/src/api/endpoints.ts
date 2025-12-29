@@ -1036,3 +1036,67 @@ export const listAuditLogs = async (params?: {
   );
   return response.data;
 };
+
+// ===== PDF 转换工具 API =====
+
+/**
+ * PDF 转 PPTX（异步任务）
+ */
+export const convertPdfToPptx = async (
+  file: File,
+  filename?: string
+): Promise<ApiResponse<{ task_id: string; message: string }>> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (filename) {
+    formData.append('filename', filename);
+  }
+
+  const response = await apiClient.post<ApiResponse<{ task_id: string; message: string }>>(
+    '/api/tools/pdf-to-pptx',
+    formData
+  );
+  return response.data;
+};
+
+/**
+ * 获取 PDF 转换任务状态
+ */
+export const getPdfConvertStatus = async (
+  taskId: string
+): Promise<ApiResponse<{
+  task_id: string;
+  status: string;
+  progress?: {
+    current_page?: number;
+    total?: number;
+    completed?: number;
+    stage?: string;
+    stage_name?: string;
+    text_blocks_count?: number;
+    pages_count?: number;
+    images_count?: number;
+  };
+  download_url?: string;
+  download_url_absolute?: string;
+  error?: string;
+}>> => {
+  const response = await apiClient.get<ApiResponse<{
+    task_id: string;
+    status: string;
+    progress?: {
+      current_page?: number;
+      total?: number;
+      completed?: number;
+      stage?: string;
+      stage_name?: string;
+      text_blocks_count?: number;
+      pages_count?: number;
+      images_count?: number;
+    };
+    download_url?: string;
+    download_url_absolute?: string;
+    error?: string;
+  }>>(`/api/tools/pdf-to-pptx/${taskId}`);
+  return response.data;
+};

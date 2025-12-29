@@ -41,6 +41,12 @@ class FileService:
         exports_dir.mkdir(exist_ok=True, parents=True)
         return exports_dir
 
+    def _get_tools_exports_dir(self) -> Path:
+        """Get exports directory for standalone tools (not bound to any project)"""
+        tools_dir = self.upload_folder / "tools" / "exports"
+        tools_dir.mkdir(exist_ok=True, parents=True)
+        return tools_dir
+
     def _get_materials_dir(self, project_id: str) -> Path:
         """Get materials directory for project (for standalone generated assets)"""
         materials_dir = self._get_project_dir(project_id) / "materials"

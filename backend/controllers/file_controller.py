@@ -128,7 +128,7 @@ def serve_mineru_file(extract_id, filepath):
 
         # This prevents path traversal attacks
         resolved_root_dir = Path(root_dir).resolve()
-        
+
         try:
             # Check if the path is trying to escape the root directory
             resolved_full_path = full_path.resolve()
@@ -140,12 +140,12 @@ def serve_mineru_file(extract_id, filepath):
 
         # Try to find file with prefix matching
         matched_path = find_file_with_prefix(full_path)
-        
+
         if matched_path is not None:
             # Additional security check for matched path
             try:
                 resolved_matched_path = matched_path.resolve(strict=True)
-                
+
                 # Verify the matched file is still within the root directory
                 if not str(resolved_matched_path).startswith(str(resolved_root_dir)):
                     return error_response('INVALID_PATH', 'Invalid file path', 403)
@@ -153,10 +153,39 @@ def serve_mineru_file(extract_id, filepath):
                 return not_found('File')
             except Exception:
                 return error_response('INVALID_PATH', 'Invalid file path', 403)
-            
+
             return send_from_directory(str(matched_path.parent), matched_path.name)
 
         return not_found('File')
+    except Exception as e:
+        return error_response('SERVER_ERROR', str(e), 500)
+
+
+@file_bp.route('/tools/exports/<filename>', methods=['GET'])
+def serve_tools_export(filename):
+    """
+    GET /files/tools/exports/{filename} - Serve tool export files (PDF to PPTX, etc.)
+
+    Args:
+        filename: File name
+    """
+    try:
+        safe_filename = secure_filename(filename)
+        file_dir = os.path.join(
+            current_app.config['UPLOAD_FOLDER'],
+            'tools',
+            'exports'
+        )
+
+        if not os.path.exists(file_dir):
+            return not_found('File')
+
+        file_path = os.path.join(file_dir, safe_filename)
+        if not os.path.exists(file_path):
+            return not_found('File')
+
+        return send_from_directory(file_dir, safe_filename)
+
     except Exception as e:
         return error_response('SERVER_ERROR', str(e), 500)
 

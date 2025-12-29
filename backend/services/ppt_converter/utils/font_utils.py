@@ -73,7 +73,23 @@ def estimate_font_size_pt(
     image_height: int,
     slide_height_pt: int = 540
 ) -> int:
-    """根据边界框高度估算字号（磅值）"""
-    px_to_pt_ratio = slide_height_pt / image_height
-    estimated_pt = int(bbox_height * px_to_pt_ratio * 1.0)
+    """
+    根据边界框高度估算字号（磅值）
+
+    计算逻辑：
+    - bbox_height 是文字在图片中的像素高度
+    - image_height 是图片的总高度（像素）
+    - slide_height_pt 是 PPTX 幻灯片高度（点，7.5英寸 = 540点）
+
+    字体大小 = bbox_height / image_height * slide_height_pt
+    这样可以保持文字在幻灯片中的相对大小与原图一致
+    """
+    if image_height <= 0:
+        return 12
+
+    # 计算文字高度占图片高度的比例，然后映射到幻灯片高度
+    ratio = bbox_height / image_height
+    estimated_pt = int(ratio * slide_height_pt)
+
+    # 限制字号范围：8-144 pt
     return max(8, min(estimated_pt, 144))

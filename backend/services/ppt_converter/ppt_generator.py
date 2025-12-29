@@ -113,16 +113,13 @@ class PPTGenerator:
 
         left = int(x * scale_x)
         top = int(y * scale_y)
-        # 文本框宽度使用原始 bbox 宽度（不再额外放大）
+        # 文本框宽度和高度按比例缩放
         width = int(w * scale_x)
-        height = int(h * scale_y * 1.2)
+        height = int(h * scale_y * 1.3)  # 高度留一些余量
 
-        # 计算适合 bbox 宽度的最优字号
-        optimal_font_size = _calculate_optimal_font_size(
-            text_block.text,
-            width,
-            text_block.font_size
-        )
+        # 直接使用估算的字号，不再根据宽度调整
+        # 因为 bbox 宽度已经是 OCR 识别的实际文字宽度
+        font_size = text_block.font_size
 
         textbox = slide.shapes.add_textbox(left, top, width, height)
         tf = textbox.text_frame
@@ -133,7 +130,7 @@ class PPTGenerator:
         p.alignment = PP_ALIGN.LEFT
 
         run = p.runs[0] if p.runs else p.add_run()
-        run.font.size = Pt(optimal_font_size)
+        run.font.size = Pt(font_size)
         run.font.name = text_block.font_name
 
         r, g, b = text_block.color

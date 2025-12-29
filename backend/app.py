@@ -26,6 +26,7 @@ from controllers.reference_file_controller import reference_file_bp
 from controllers.settings_controller import settings_bp
 from controllers.auth_controller import auth_bp
 from controllers.admin_controller import admin_bp
+from controllers.pdf_convert_controller import pdf_convert_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, export_bp, file_bp
 
 
@@ -113,6 +114,7 @@ def create_app():
     app.register_blueprint(settings_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(pdf_convert_bp)
 
     with app.app_context():
         # Load settings from database and sync to app.config
