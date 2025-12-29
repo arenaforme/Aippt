@@ -803,7 +803,8 @@ def export_editable_ppt_task(
                 "total": len(image_paths),
                 "completed": 0,
                 "failed": 0,
-                "stage": "initializing"
+                "stage": "initializing",
+                "stage_name": "初始化中..."
             })
             db.session.commit()
 
@@ -814,19 +815,37 @@ def export_editable_ppt_task(
                 secret_key=secret_key
             )
 
-            # 更新进度：开始 OCR 识别
-            task.set_progress({
-                "total": len(image_paths),
-                "completed": 0,
-                "failed": 0,
-                "stage": "ocr_recognition"
-            })
-            db.session.commit()
+            # 定义进度回调函数
+            def progress_callback(progress_info: dict):
+                """更新任务进度到数据库"""
+                try:
+                    task = Task.query.get(task_id)
+                    if task:
+                        current_page = progress_info.get('current_page', 0)
+                        total = progress_info.get('total', len(image_paths))
+                        completed = progress_info.get('completed', 0)
+                        stage = progress_info.get('stage', 'processing')
+                        stage_name = progress_info.get('stage_name', '处理中...')
+                        text_blocks = progress_info.get('text_blocks_count', 0)
+
+                        task.set_progress({
+                            "total": total,
+                            "completed": completed,
+                            "failed": 0,
+                            "current_page": current_page,
+                            "stage": stage,
+                            "stage_name": stage_name,
+                            "text_blocks_count": text_blocks
+                        })
+                        db.session.commit()
+                except Exception as e:
+                    logger.warning(f"更新进度失败: {e}")
 
             result = converter.convert_images(
                 image_paths=image_paths,
                 output_path=output_path,
-                remove_text=True
+                remove_text=True,
+                progress_callback=progress_callback
             )
 
             task.status = 'COMPLETED'
@@ -836,6 +855,7 @@ def export_editable_ppt_task(
                 "completed": result.slides_count,
                 "failed": 0,
                 "stage": "completed",
+                "stage_name": "导出完成",
                 "text_blocks_count": result.text_blocks_count,
                 "output_path": str(result.output_path)
             })

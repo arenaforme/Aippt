@@ -16,6 +16,17 @@ interface ProjectState {
   pageDescriptionGeneratingTasks: Record<string, boolean>;
   // 最近一次可编辑 PPTX 导出的下载链接
   lastEditablePPTXUrl: string | null;
+  // 可编辑 PPTX 导出进度状态
+  editablePPTXExportStatus: 'idle' | 'processing' | 'completed' | 'failed';
+  editablePPTXExportProgress: {
+    total: number;
+    completed: number;
+    current_page?: number;
+    stage?: string;
+    stage_name?: string;
+    text_blocks_count?: number;
+  } | null;
+  editablePPTXExportError: string | null;
 
   // Actions
   setCurrentProject: (project: Project | null) => void;
@@ -59,6 +70,7 @@ interface ProjectState {
   exportPPTX: () => Promise<void>;
   exportPDF: () => Promise<void>;
   exportEditablePPTX: () => Promise<void>;
+  resetEditablePPTXExportState: () => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => {
@@ -99,12 +111,22 @@ const debouncedUpdatePage = debounce(
   pageGeneratingTasks: {},
   pageDescriptionGeneratingTasks: {},
   lastEditablePPTXUrl: localStorage.getItem('lastEditablePPTXUrl'),
+  editablePPTXExportStatus: 'idle' as const,
+  editablePPTXExportProgress: null,
+  editablePPTXExportError: null,
 
   // Setters
   setCurrentProject: (project) => set({ currentProject: project }),
   setGlobalLoading: (loading) => set({ isGlobalLoading: loading }),
   setError: (error) => set({ error }),
   setLastEditablePPTXUrl: (url) => set({ lastEditablePPTXUrl: url }),
+
+  // 重置导出状态
+  resetEditablePPTXExportState: () => set({
+    editablePPTXExportStatus: 'idle',
+    editablePPTXExportProgress: null,
+    editablePPTXExportError: null,
+  }),
 
   // 初始化项目
   initializeProject: async (type, content, templateImage) => {
@@ -851,7 +873,14 @@ const debouncedUpdatePage = debounce(
       return;
     }
 
-    set({ isGlobalLoading: true, error: null });
+    // 设置初始状态
+    set({
+      editablePPTXExportStatus: 'processing',
+      editablePPTXExportProgress: null,
+      editablePPTXExportError: null,
+      error: null,
+    });
+
     try {
       // 启动异步导出任务
       const response = await api.exportEditablePPTX(currentProject.id);
@@ -862,8 +891,8 @@ const debouncedUpdatePage = debounce(
       }
 
       // 轮询任务状态
-      const pollInterval = 2000; // 2秒
-      const maxAttempts = 150; // 最多5分钟
+      const pollInterval = 1500; // 1.5秒，更频繁以获取细粒度进度
+      const maxAttempts = 200; // 最多5分钟
       let attempts = 0;
 
       const poll = async (): Promise<void> => {
@@ -872,15 +901,21 @@ const debouncedUpdatePage = debounce(
           currentProject.id,
           taskId
         );
+        // statusResponse 是 ApiResponse<{ task_id, status, progress, ... }>
+        // 即 { success: true, data: { task_id, status, progress, ... } }
         const status = statusResponse.data?.status;
         const progress = statusResponse.data?.progress;
 
-        // 更新进度
+        // 更新细粒度进度
         if (progress) {
           set({
-            taskProgress: {
+            editablePPTXExportProgress: {
               total: progress.total,
               completed: progress.completed,
+              current_page: progress.current_page,
+              stage: progress.stage,
+              stage_name: progress.stage_name,
+              text_blocks_count: progress.text_blocks_count,
             },
           });
         }
@@ -892,7 +927,10 @@ const debouncedUpdatePage = debounce(
 
           if (downloadUrl) {
             // 保存下载链接到 state 和 localStorage
-            set({ lastEditablePPTXUrl: downloadUrl });
+            set({
+              lastEditablePPTXUrl: downloadUrl,
+              editablePPTXExportStatus: 'completed',
+            });
             localStorage.setItem('lastEditablePPTXUrl', downloadUrl);
             // 使用 <a> 标签触发下载
             const link = document.createElement('a');
@@ -924,9 +962,12 @@ const debouncedUpdatePage = debounce(
 
       await poll();
     } catch (error: any) {
-      set({ error: error.message || '导出失败' });
-    } finally {
-      set({ isGlobalLoading: false, taskProgress: null });
+      const errorMsg = error.message || '导出失败';
+      set({
+        editablePPTXExportStatus: 'failed',
+        editablePPTXExportError: errorMsg,
+        error: errorMsg,
+      });
     }
   },
 };});

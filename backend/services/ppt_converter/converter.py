@@ -5,7 +5,7 @@ PPT 转换器主模块
 
 import logging
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, Callable
 import cv2
 
 from .models import SlideData, ConversionResult
@@ -38,21 +38,62 @@ class PPTConverter:
         self,
         image_paths: list[Union[str, Path]],
         output_path: Union[str, Path],
-        remove_text: bool = True
+        remove_text: bool = True,
+        progress_callback: Optional[Callable[[dict], None]] = None
     ) -> ConversionResult:
-        """转换多张图片为可编辑 PPT"""
+        """
+        转换多张图片为可编辑 PPT
+
+        Args:
+            image_paths: 图片路径列表
+            output_path: 输出文件路径
+            remove_text: 是否移除原图中的文字区域
+            progress_callback: 进度回调函数，接收进度字典
+        """
         generator = PPTGenerator()
         slides_data = []
         total_text_blocks = 0
+        total_pages = len(image_paths)
 
         for idx, image_path in enumerate(image_paths, start=1):
+            # 回调：开始处理当前页
+            if progress_callback:
+                progress_callback({
+                    'current_page': idx,
+                    'total': total_pages,
+                    'stage': 'ocr',
+                    'stage_name': f'第 {idx} 页 OCR 识别中...'
+                })
+
             slide_data = self._process_single_image(
-                image_path, remove_text, index=idx
+                image_path, remove_text, index=idx,
+                progress_callback=progress_callback
             )
             if slide_data:
                 generator.add_slide(slide_data)
                 slides_data.append(slide_data)
                 total_text_blocks += len(slide_data.text_blocks)
+
+            # 回调：当前页处理完成
+            if progress_callback:
+                progress_callback({
+                    'current_page': idx,
+                    'total': total_pages,
+                    'completed': idx,
+                    'stage': 'page_done',
+                    'stage_name': f'第 {idx} 页处理完成',
+                    'text_blocks_count': len(slide_data.text_blocks) if slide_data else 0
+                })
+
+        # 回调：生成 PPT 文件
+        if progress_callback:
+            progress_callback({
+                'current_page': total_pages,
+                'total': total_pages,
+                'completed': total_pages,
+                'stage': 'generating',
+                'stage_name': '正在生成 PPT 文件...'
+            })
 
         output_path = generator.save(output_path)
 
@@ -67,7 +108,8 @@ class PPTConverter:
         self,
         image_path: Union[str, Path],
         remove_text: bool,
-        index: int = 1
+        index: int = 1,
+        progress_callback: Optional[Callable[[dict], None]] = None
     ) -> Optional[SlideData]:
         """处理单张图片"""
         image_path = Path(image_path)
@@ -93,7 +135,14 @@ class PPTConverter:
         # LLM 智能处理（如果配置了 DeepSeek）
         llm_filter = get_llm_filter()
         if llm_filter and text_blocks:
-            # 过滤掉 OCR 噪音和误识别
+            # 回调：LLM 过滤阶段
+            if progress_callback:
+                progress_callback({
+                    'current_page': index,
+                    'stage': 'llm_filter',
+                    'stage_name': f'第 {index} 页 LLM 智能过滤中...'
+                })
+
             logger.info(f"第 {index} 页开始 LLM 过滤...")
             text_blocks, filtered_count = llm_filter.filter_text_blocks(
                 text_blocks, page_index=index

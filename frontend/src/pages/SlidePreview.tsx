@@ -16,7 +16,7 @@ import {
   Image as ImageIcon,
   ImagePlus,
 } from 'lucide-react';
-import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, Markdown, UserMenu } from '@/components/shared';
+import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, Markdown, UserMenu, ExportProgressModal } from '@/components/shared';
 import { MaterialGeneratorModal } from '@/components/shared/MaterialGeneratorModal';
 import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
 import { listUserTemplates, type UserTemplate } from '@/api/endpoints';
@@ -48,6 +48,10 @@ export const SlidePreview: React.FC = () => {
     taskProgress,
     pageGeneratingTasks,
     lastEditablePPTXUrl,
+    editablePPTXExportStatus,
+    editablePPTXExportProgress,
+    editablePPTXExportError,
+    resetEditablePPTXExportState,
   } = useProjectStore();
 
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -1393,6 +1397,15 @@ export const SlidePreview: React.FC = () => {
           />
         </>
       )}
+      {/* 可编辑 PPTX 导出进度 Modal */}
+      <ExportProgressModal
+        isOpen={editablePPTXExportStatus !== 'idle'}
+        onClose={resetEditablePPTXExportState}
+        progress={editablePPTXExportProgress}
+        status={editablePPTXExportStatus}
+        error={editablePPTXExportError}
+        downloadUrl={lastEditablePPTXUrl}
+      />
     </div>
   );
 };
