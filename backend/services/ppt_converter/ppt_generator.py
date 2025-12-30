@@ -3,6 +3,7 @@ PPT 生成模块
 根据识别结果生成可编辑的 .pptx 文件
 """
 
+import logging
 from pathlib import Path
 from typing import Union
 from pptx import Presentation
@@ -11,6 +12,8 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 
 from .models import SlideData, TextBlock
+
+logger = logging.getLogger(__name__)
 
 
 def _estimate_text_width(text: str, font_size_pt: float) -> float:
@@ -53,8 +56,16 @@ def _calculate_optimal_font_size(
     # 先用原始字号估算文字宽度
     estimated_width = _estimate_text_width(text, original_font_size)
 
+    text_preview = text[:20] if len(text) > 20 else text
+    logger.info(
+        f"字号计算: text='{text_preview}', "
+        f"bbox_width={bbox_width_emu}, estimated_width={estimated_width:.0f}, "
+        f"original_size={original_font_size}"
+    )
+
     # 如果估算宽度小于 bbox 宽度，使用原始字号
     if estimated_width <= bbox_width_emu:
+        logger.info(f"  -> 无需缩小，使用原始字号 {original_font_size}pt")
         return original_font_size
 
     # 否则，按比例缩小字号
@@ -62,7 +73,12 @@ def _calculate_optimal_font_size(
     adjusted_size = int(original_font_size * ratio * 0.95)  # 留5%余量
 
     # 字号下限为8pt
-    return max(8, adjusted_size)
+    final_size = max(8, adjusted_size)
+    logger.info(
+        f"  -> 字号缩小: {original_font_size}pt -> {final_size}pt "
+        f"(ratio={ratio:.2f})"
+    )
+    return final_size
 
 
 class PPTGenerator:
@@ -113,13 +129,20 @@ class PPTGenerator:
 
         left = int(x * scale_x)
         top = int(y * scale_y)
-        # 文本框宽度和高度按比例缩放
         width = int(w * scale_x)
         height = int(h * scale_y * 1.3)  # 高度留一些余量
 
-        # 直接使用估算的字号，不再根据宽度调整
-        # 因为 bbox 宽度已经是 OCR 识别的实际文字宽度
-        font_size = text_block.font_size
+        # 确保文本框不超出幻灯片右边界
+        max_width = self.prs.slide_width - left
+        if width > max_width:
+            width = max_width
+
+        # 计算最优字号：如果文字超出 bbox 宽度，则缩小字号
+        font_size = _calculate_optimal_font_size(
+            text_block.text,
+            width,
+            text_block.font_size
+        )
 
         textbox = slide.shapes.add_textbox(left, top, width, height)
         tf = textbox.text_frame
