@@ -3,9 +3,12 @@
 识别图片中文字的字体类别（黑体/宋体/楷体等）
 """
 
+import logging
 from enum import Enum
 import numpy as np
 import cv2
+
+logger = logging.getLogger(__name__)
 
 
 class FontCategory(Enum):
@@ -98,13 +101,22 @@ class FontClassifier:
         variance = features.get("stroke_width_variance", 0)
         smoothness = features.get("edge_smoothness", 0)
 
+        # 调试日志：输出特征值
+        logger.info(
+            f"字体分类特征: variance={variance:.4f}, smoothness={smoothness:.4f}"
+        )
+
         if variance > 0.3:
+            logger.info(f"  -> 分类结果: SONGTI (variance > 0.3)")
             return FontCategory.SONGTI
         if smoothness > 0.95:
+            logger.info(f"  -> 分类结果: YUANTI (smoothness > 0.95)")
             return FontCategory.YUANTI
         if smoothness < 0.8 and variance > 0.15:
+            logger.info(f"  -> 分类结果: KAITI (smoothness < 0.8 && variance > 0.15)")
             return FontCategory.KAITI
 
+        logger.info(f"  -> 分类结果: HEITI (默认)")
         return FontCategory.HEITI
 
     def estimate_font_weight(self, text_image: np.ndarray) -> str:

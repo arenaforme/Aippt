@@ -10,6 +10,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
+from pptx.oxml.ns import qn
 
 from .models import SlideData, TextBlock
 
@@ -155,6 +156,16 @@ class PPTGenerator:
         run = p.runs[0] if p.runs else p.add_run()
         run.font.size = Pt(font_size)
         run.font.name = text_block.font_name
+
+        # 设置东亚字体（中文字符使用此字体）
+        run.font._element.set(qn('w:eastAsia'), text_block.font_name)
+        # 同时设置 latin 和 ea 属性确保中文正确显示
+        rPr = run.font._element
+        ea = rPr.find(qn('a:ea'))
+        if ea is None:
+            from lxml import etree
+            ea = etree.SubElement(rPr, qn('a:ea'))
+        ea.set('typeface', text_block.font_name)
 
         r, g, b = text_block.color
         run.font.color.rgb = RGBColor(r, g, b)

@@ -3,6 +3,7 @@
 将识别出的字体类别映射到具体的免费字体
 """
 
+import logging
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
@@ -17,6 +18,8 @@ from .utils.font_utils import (
 )
 from .utils.image_utils import crop_image
 from .models import TextBlock
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -36,6 +39,9 @@ class FontMapper:
     def __init__(self):
         self.classifier = FontClassifier()
 
+    # 字号阈值：大于等于此值判定为标题（黑体）
+    TITLE_FONT_SIZE_THRESHOLD = 24
+
     def map_font(
         self,
         text_image: np.ndarray,
@@ -43,10 +49,17 @@ class FontMapper:
         image_height: int
     ) -> FontMapping:
         """分析文字图像并映射到具体字体"""
-        category = self.classifier.classify(text_image)
+        # 先计算字号
+        font_size = estimate_font_size_pt(bbox_height, image_height)
+
+        # 字号启发式分类：大字号用黑体（标题），小字号用宋体（正文）
+        if font_size >= self.TITLE_FONT_SIZE_THRESHOLD:
+            category = FontCategory.HEITI
+        else:
+            category = FontCategory.SONGTI
+
         weight = self.classifier.estimate_font_weight(text_image)
         color = extract_text_color(text_image)
-        font_size = estimate_font_size_pt(bbox_height, image_height)
         font_path = get_font_path(category.value, weight)
         font_name = get_font_display_name(category.value)
 
@@ -76,6 +89,13 @@ class FontMapper:
         text_block.font_name = mapping.font_name
         text_block.font_size = mapping.font_size
         text_block.color = mapping.color
+
+        # 调试日志：输出映射结果
+        text_preview = text_block.text[:15] if len(text_block.text) > 15 else text_block.text
+        logger.info(
+            f"字体映射: '{text_preview}' -> "
+            f"{mapping.font_size}pt -> {mapping.category}/{mapping.font_name}"
+        )
 
         return text_block
 
