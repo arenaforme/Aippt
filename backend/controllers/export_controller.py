@@ -53,10 +53,8 @@ def _build_reference_text_from_pages(pages) -> str:
         elif text_content:
             lines.append(str(text_content))
 
-        # 提取其他可能的文本字段
-        text = desc_content.get('text', '')
-        if text and text not in lines:
-            lines.append(text)
+        # 注意：不再提取 'text' 字段，因为它是完整描述文本，
+        # 包含了 title 和 text_content 的内容，会导致重复
 
         lines.append('')  # 空行分隔
 
