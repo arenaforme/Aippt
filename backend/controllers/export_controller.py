@@ -4,6 +4,7 @@ Export Controller - handles file export endpoints
 from flask import Blueprint, request, current_app
 from models import db, Project, Page, Task
 from utils import error_response, not_found, bad_request, success_response
+from utils.auth import login_required, feature_required
 from services import ExportService, FileService
 from services.task_manager import task_manager, export_editable_ppt_task
 import os
@@ -66,6 +67,8 @@ def _build_reference_text_from_pages(pages) -> str:
 
 
 @export_bp.route('/<project_id>/export/pptx', methods=['GET'])
+@login_required
+@feature_required('export_image_pptx', consume_quota=False)
 def export_pptx(project_id):
     """
     GET /api/projects/{project_id}/export/pptx?filename=... - Export PPTX
@@ -136,6 +139,8 @@ def export_pptx(project_id):
 
 
 @export_bp.route('/<project_id>/export/pdf', methods=['GET'])
+@login_required
+@feature_required('export_pdf', consume_quota=False)
 def export_pdf(project_id):
     """
     GET /api/projects/{project_id}/export/pdf?filename=... - Export PDF
@@ -206,6 +211,8 @@ def export_pdf(project_id):
 
 
 @export_bp.route('/<project_id>/export/editable-pptx', methods=['POST'])
+@login_required
+@feature_required('export_editable_pptx', consume_quota=True)
 def export_editable_pptx(project_id):
     """
     POST /api/projects/{project_id}/export/editable-pptx - 导出可编辑 PPT（异步）

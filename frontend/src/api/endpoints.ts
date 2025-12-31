@@ -849,6 +849,11 @@ export interface AdminUser {
   status: 'active' | 'disabled';
   created_at: string;
   last_login_at: string | null;
+  // 会员相关字段
+  membership_level?: string;
+  membership_expires_at?: string;
+  image_quota?: number;
+  premium_quota?: number;
 }
 
 /**

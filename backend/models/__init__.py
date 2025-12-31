@@ -18,6 +18,11 @@ from .user import User
 from .audit_log import AuditLog
 from .system_config import SystemConfig
 
+# 会员系统模型
+from .membership_plan import MembershipPlan
+from .feature_permission import FeaturePermission
+from .order import Order
+
 # 业务模型
 from .project import Project
 from .page import Page
@@ -31,6 +36,7 @@ from .settings import Settings
 __all__ = [
     'db',
     'User', 'AuditLog', 'SystemConfig',
+    'MembershipPlan', 'FeaturePermission', 'Order',
     'Project', 'Page', 'Task', 'UserTemplate',
     'PageImageVersion', 'Material', 'ReferenceFile', 'Settings'
 ]

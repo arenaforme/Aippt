@@ -4,8 +4,9 @@
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Download, ArrowLeft, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Upload, FileText, Download, ArrowLeft, Loader2, CheckCircle, XCircle, Crown } from 'lucide-react';
 import * as api from '@/api/endpoints';
+import * as membershipApi from '@/api/membership';
 
 type ConvertStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 
@@ -95,6 +96,24 @@ export default function PdfToPptx() {
   // 开始转换
   const handleConvert = async () => {
     if (!selectedFile) return;
+
+    // 检查权限
+    try {
+      const result = await membershipApi.checkPermission('pdf_to_pptx');
+      if (!result.has_permission) {
+        setStatus('failed');
+        setErrorMessage(result.error || '需要高级会员才能使用此功能，请前往会员中心开通');
+        return;
+      }
+      // 检查配额
+      if (result.quota && result.quota.remaining <= 0) {
+        setStatus('failed');
+        setErrorMessage('高级功能配额不足，请前往会员中心升级');
+        return;
+      }
+    } catch (err) {
+      // 权限检查失败，继续尝试（后端会再次检查）
+    }
 
     setStatus('uploading');
     setErrorMessage('');

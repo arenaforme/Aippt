@@ -11,6 +11,10 @@ import { Register } from './pages/Register';
 import { UserManagement } from './pages/UserManagement';
 import { AdminProjects } from './pages/AdminProjects';
 import { AuditLogs } from './pages/AuditLogs';
+import { Membership } from './pages/Membership';
+import { MembershipPlans } from './pages/MembershipPlans';
+import { Orders } from './pages/Orders';
+import { AdminOrders } from './pages/AdminOrders';
 import PdfToPptx from './pages/PdfToPptx';
 import { useProjectStore } from './store/useProjectStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -55,6 +59,8 @@ function App() {
         <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/membership" element={<ProtectedRoute><Membership /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
         <Route path="/project/:projectId/outline" element={<ProtectedRoute><OutlineEditor /></ProtectedRoute>} />
         <Route path="/project/:projectId/detail" element={<ProtectedRoute><DetailEditor /></ProtectedRoute>} />
         <Route path="/project/:projectId/preview" element={<ProtectedRoute><SlidePreview /></ProtectedRoute>} />
@@ -63,6 +69,8 @@ function App() {
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><UserManagement /></ProtectedRoute>} />
         <Route path="/admin/projects" element={<ProtectedRoute requireAdmin><AdminProjects /></ProtectedRoute>} />
         <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
+        <Route path="/admin/membership/plans" element={<ProtectedRoute requireAdmin><MembershipPlans /></ProtectedRoute>} />
+        <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
 
         {/* 工具路由 */}
         <Route path="/tools/pdf-to-pptx" element={<ProtectedRoute><PdfToPptx /></ProtectedRoute>} />

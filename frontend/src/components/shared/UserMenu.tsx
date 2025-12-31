@@ -1,16 +1,26 @@
 /**
  * 用户菜单组件
- * 显示当前用户信息和登出功能
+ * 显示当前用户信息、会员状态和登出功能
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText } from 'lucide-react';
+import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Modal } from './Modal';
 import { Input } from './Input';
 import { Button } from './Button';
 import { useToast } from './Toast';
 import { changePassword } from '@/api/auth';
+import * as membershipApi from '@/api/membership';
+import type { MembershipStatus } from '@/api/membership';
+
+// 会员等级配置
+const LEVEL_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
+  free: { label: '免费用户', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  basic: { label: '基础会员', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  premium: { label: '高级会员', color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  admin: { label: '管理员', color: 'text-red-600', bgColor: 'bg-red-100' },
+};
 
 export const UserMenu: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +28,9 @@ export const UserMenu: React.FC = () => {
   const { show, ToastContainer } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // 会员状态
+  const [membershipStatus, setMembershipStatus] = useState<MembershipStatus | null>(null);
 
   // 修改密码相关状态
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -28,6 +41,20 @@ export const UserMenu: React.FC = () => {
   });
   const [showPasswords, setShowPasswords] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  // 获取会员状态
+  useEffect(() => {
+    if (user) {
+      membershipApi.getMembershipStatus()
+        .then(setMembershipStatus)
+        .catch(() => {}); // 静默失败
+    }
+  }, [user]);
+
+  // 获取等级配置
+  const getLevelConfig = (level: string) => {
+    return LEVEL_CONFIG[level] || LEVEL_CONFIG.free;
+  };
 
   // 点击外部关闭菜单
   useEffect(() => {
@@ -126,7 +153,7 @@ export const UserMenu: React.FC = () => {
 
       {/* 下拉菜单 */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg
+        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg
           border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           {/* 用户信息 */}
           <div className="px-4 py-3 border-b border-gray-100">
@@ -137,7 +164,16 @@ export const UserMenu: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">{user.username}</p>
-                {isAdmin() && (
+                {/* 会员等级徽章 */}
+                {membershipStatus && (
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded
+                    ${getLevelConfig(membershipStatus.effective_level).color}
+                    ${getLevelConfig(membershipStatus.effective_level).bgColor}`}>
+                    {membershipStatus.effective_level === 'admin' ? <Shield size={10} /> : <Crown size={10} />}
+                    {getLevelConfig(membershipStatus.effective_level).label}
+                  </span>
+                )}
+                {!membershipStatus && isAdmin() && (
                   <span className="inline-flex items-center gap-1 text-xs text-banana-600 font-medium">
                     <Shield size={12} />
                     管理员
@@ -145,10 +181,34 @@ export const UserMenu: React.FC = () => {
                 )}
               </div>
             </div>
+            {/* 配额显示 */}
+            {membershipStatus && !isAdmin() && (
+              <div className="mt-3 flex gap-3 text-xs">
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Image size={12} className="text-blue-500" />
+                  <span>图片: <strong className="text-gray-700">{membershipStatus.image_quota}</strong></span>
+                </div>
+                <div className="flex items-center gap-1 text-gray-500">
+                  <Zap size={12} className="text-purple-500" />
+                  <span>高级: <strong className="text-gray-700">{membershipStatus.premium_quota}</strong></span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 修改密码 */}
           <div className="px-2 py-1 border-b border-gray-100">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/membership');
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+            >
+              <Crown size={16} />
+              会员中心
+            </button>
             <button
               onClick={handleOpenPasswordModal}
               className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700

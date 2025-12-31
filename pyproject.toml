@@ -28,6 +28,8 @@ dependencies = [
     "requests>=2.31.0",
     # PDF 解析依赖
     "pymupdf>=1.24.0",
+    # CBB 支付签名验证
+    "pycryptodome>=3.20.0",
 ]
 
 [tool.uv]

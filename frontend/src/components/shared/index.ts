@@ -24,5 +24,6 @@ export { ProtectedRoute, PublicRoute } from './ProtectedRoute';
 export { UserMenu } from './UserMenu';
 export { ForcePasswordChangeModal } from './ForcePasswordChangeModal';
 export { ExportProgressModal } from './ExportProgressModal';
+export { PaymentModal } from './PaymentModal';
 
 

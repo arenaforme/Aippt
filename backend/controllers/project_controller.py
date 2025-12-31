@@ -5,8 +5,10 @@ import logging
 from flask import Blueprint, request, jsonify, current_app, g
 from models import db, Project, Page, Task, ReferenceFile
 from utils import success_response, error_response, not_found, bad_request, login_required
+from utils.auth import feature_required
 from services import AIService, ProjectContext
 from services.task_manager import task_manager, generate_descriptions_task, generate_images_task
+from services.membership_service import MembershipService
 import json
 import traceback
 from datetime import datetime
@@ -689,15 +691,24 @@ def generate_images(project_id):
 
         # if project.status not in ['DESCRIPTIONS_GENERATED', 'OUTLINE_GENERATED']:
         #     return bad_request("Project must have descriptions generated first")
-        
+
         # IMPORTANT: Expire cached objects to ensure fresh data
         db.session.expire_all()
-        
+
         # Get pages
         pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
-        
+
         if not pages:
             return bad_request("No pages found for project")
+
+        # 会员权限检查：检查配额是否足够生成所有页面的图片
+        user = g.current_user
+        pages_count = len(pages)
+        success, error = MembershipService.check_and_consume_quota(
+            user, 'generate_image', amount=pages_count
+        )
+        if not success:
+            return error_response(error, 403)
         
         # Reconstruct outline from pages with part structure
         outline = _reconstruct_outline_from_pages(pages)

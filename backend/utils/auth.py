@@ -5,7 +5,8 @@ from functools import wraps
 from flask import request, g
 from .response import error_response
 from services.auth_service import AuthService
-from models import User
+from services.membership_service import MembershipService
+from models import User, FeaturePermission
 
 
 def get_token_from_request() -> str:
@@ -51,6 +52,28 @@ def login_required(f):
     return decorated_function
 
 
+def get_current_user_optional():
+    """
+    可选的用户获取函数（不是装饰器）
+    尝试从请求中获取当前用户，如果没有token或token无效则返回None
+    用于需要可选认证的场景
+    """
+    token = get_token_from_request()
+    if not token:
+        return None
+
+    valid, payload, _ = AuthService.verify_token(token)
+    if not valid:
+        return None
+
+    user_id = payload.get('user_id')
+    user = User.query.get(user_id)
+    if not user or user.status == 'disabled':
+        return None
+
+    return user
+
+
 def admin_required(f):
     """
     管理员权限装饰器
@@ -63,6 +86,62 @@ def admin_required(f):
             return error_response('需要管理员权限', 403)
         return f(*args, **kwargs)
     return decorated_function
+
+
+def membership_required(min_level: str = 'free'):
+    """
+    会员等级权限装饰器
+    min_level: 最低所需会员等级 (free/basic/premium)
+    """
+    def decorator(f):
+        @wraps(f)
+        @login_required
+        def decorated_function(*args, **kwargs):
+            user = g.current_user
+            effective_level = user.get_effective_level()
+
+            # 管理员拥有所有权限
+            if effective_level == 'admin':
+                return f(*args, **kwargs)
+
+            # 检查等级
+            level_priority = {'free': 0, 'basic': 1, 'premium': 2}
+            user_priority = level_priority.get(effective_level, 0)
+            required_priority = level_priority.get(min_level, 0)
+
+            if user_priority < required_priority:
+                return error_response(f'需要 {min_level} 等级会员才能使用此功能', 403)
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+def feature_required(feature_code: str, consume_quota: bool = True):
+    """
+    功能权限装饰器
+    feature_code: 功能代码
+    consume_quota: 是否消耗配额（默认True）
+    """
+    def decorator(f):
+        @wraps(f)
+        @login_required
+        def decorated_function(*args, **kwargs):
+            user = g.current_user
+
+            if consume_quota:
+                # 检查权限并消耗配额
+                success, error = MembershipService.check_and_consume_quota(user, feature_code)
+            else:
+                # 仅检查权限，不消耗配额
+                success, error = MembershipService.check_feature_permission(user, feature_code)
+
+            if not success:
+                return error_response(error, 403)
+
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 
 def get_client_ip() -> str:

@@ -27,6 +27,10 @@ from controllers.settings_controller import settings_bp
 from controllers.auth_controller import auth_bp
 from controllers.admin_controller import admin_bp
 from controllers.pdf_convert_controller import pdf_convert_bp
+from controllers.membership_controller import membership_bp
+from controllers.admin_membership_controller import admin_membership_bp
+from controllers.order_controller import order_bp
+from controllers.payment_callback_controller import payment_callback_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, export_bp, file_bp
 
 
@@ -115,6 +119,10 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(pdf_convert_bp)
+    app.register_blueprint(membership_bp)
+    app.register_blueprint(admin_membership_bp)
+    app.register_blueprint(order_bp)
+    app.register_blueprint(payment_callback_bp)
 
     with app.app_context():
         # Load settings from database and sync to app.config

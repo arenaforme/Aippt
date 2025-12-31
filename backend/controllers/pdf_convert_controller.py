@@ -9,6 +9,7 @@ from werkzeug.utils import secure_filename
 
 from models import db, Task
 from utils import error_response, bad_request, success_response
+from utils.auth import login_required, feature_required
 from services.pdf_converter import PDFConverter
 from services.task_manager import task_manager
 from services import FileService
@@ -85,6 +86,8 @@ def _pdf_to_pptx_task(
 
 
 @pdf_convert_bp.route('/pdf-to-pptx', methods=['POST'])
+@login_required
+@feature_required('pdf_to_pptx', consume_quota=True)
 def convert_pdf_to_pptx():
     """
     POST /api/tools/pdf-to-pptx - 将 PDF 转换为可编辑 PPTX（异步）

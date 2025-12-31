@@ -40,7 +40,7 @@ def list_users():
     users = query.order_by(desc(User.created_at)).limit(limit).offset(offset).all()
 
     return success_response({
-        'users': [u.to_dict() for u in users],
+        'users': [u.to_dict(for_admin=True) for u in users],
         'total': total
     })
 

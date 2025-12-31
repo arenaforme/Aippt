@@ -3,10 +3,12 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight, Crown, Image, Zap, FileText } from 'lucide-react';
 import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu } from '@/components/shared';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, getSystemConfig, updateSystemConfig } from '@/api/endpoints';
+import * as membershipApi from '@/api/membership';
 import type { AdminUser } from '@/api/endpoints';
+import type { MembershipPlan } from '@/api/membership';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export const UserManagement: React.FC = () => {
@@ -21,6 +23,17 @@ export const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+
+  // 会员管理相关状态
+  const [plans, setPlans] = useState<MembershipPlan[]>([]);
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUsername, setSelectedUsername] = useState('');
+  const [membershipForm, setMembershipForm] = useState({ plan_id: '', expires_at: '' });
+  const [quotaForm, setQuotaForm] = useState({ image_quota: 0, premium_quota: 0 });
+  const [isSavingMembership, setIsSavingMembership] = useState(false);
+  const [isSavingQuota, setIsSavingQuota] = useState(false);
 
   // 注册开关状态
   const [allowRegistration, setAllowRegistration] = useState<boolean>(true);
@@ -91,10 +104,21 @@ export const UserManagement: React.FC = () => {
     }
   };
 
+  // 加载会员套餐列表
+  const loadPlans = useCallback(async () => {
+    try {
+      const plans = await membershipApi.adminGetAllPlans();
+      setPlans(plans);
+    } catch (error: any) {
+      console.error('加载套餐列表失败:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadUsers();
     loadSystemConfig();
-  }, [loadUsers, loadSystemConfig]);
+    loadPlans();
+  }, [loadUsers, loadSystemConfig, loadPlans]);
 
   // 过滤用户（前端搜索）
   const filteredUsers = users.filter(u =>
@@ -194,6 +218,66 @@ export const UserManagement: React.FC = () => {
     setIsResetPasswordModalOpen(true);
   };
 
+  // 打开设置会员弹窗
+  const openMembershipModal = (userId: string, username: string, user: AdminUser) => {
+    setSelectedUserId(userId);
+    setSelectedUsername(username);
+    setMembershipForm({
+      plan_id: '',
+      expires_at: user.membership_expires_at?.split('T')[0] || '',
+    });
+    setIsMembershipModalOpen(true);
+  };
+
+  // 打开调整配额弹窗
+  const openQuotaModal = (userId: string, username: string, user: AdminUser) => {
+    setSelectedUserId(userId);
+    setSelectedUsername(username);
+    setQuotaForm({
+      image_quota: user.image_quota || 0,
+      premium_quota: user.premium_quota || 0,
+    });
+    setIsQuotaModalOpen(true);
+  };
+
+  // 保存会员设置
+  const handleSaveMembership = async () => {
+    if (!selectedUserId || !membershipForm.plan_id) {
+      show({ message: '请选择套餐', type: 'error' });
+      return;
+    }
+    setIsSavingMembership(true);
+    try {
+      await membershipApi.adminSetUserMembership(selectedUserId, {
+        plan_id: membershipForm.plan_id,
+        expires_at: membershipForm.expires_at || undefined,
+      });
+      show({ message: '会员设置成功', type: 'success' });
+      setIsMembershipModalOpen(false);
+      loadUsers();
+    } catch (error: any) {
+      show({ message: '设置失败: ' + (error.response?.data?.error?.message || error.message), type: 'error' });
+    } finally {
+      setIsSavingMembership(false);
+    }
+  };
+
+  // 保存配额调整
+  const handleSaveQuota = async () => {
+    if (!selectedUserId) return;
+    setIsSavingQuota(true);
+    try {
+      await membershipApi.adminSetUserQuota(selectedUserId, quotaForm);
+      show({ message: '配额调整成功', type: 'success' });
+      setIsQuotaModalOpen(false);
+      loadUsers();
+    } catch (error: any) {
+      show({ message: '调整失败: ' + (error.response?.data?.error?.message || error.message), type: 'error' });
+    } finally {
+      setIsSavingQuota(false);
+    }
+  };
+
   if (isLoading) {
     return <Loading fullscreen message="加载用户列表..." />;
   }
@@ -253,6 +337,12 @@ export const UserManagement: React.FC = () => {
                 <option value="active">活跃</option>
                 <option value="disabled">禁用</option>
               </select>
+              <Button variant="outline" icon={<Crown size={18} />} onClick={() => navigate('/admin/membership/plans')}>
+                套餐管理
+              </Button>
+              <Button variant="outline" icon={<FileText size={18} />} onClick={() => navigate('/admin/orders')}>
+                订单管理
+              </Button>
               <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsCreateModalOpen(true)}>
                 创建用户
               </Button>
@@ -293,6 +383,8 @@ export const UserManagement: React.FC = () => {
             onUpdateStatus={handleUpdateStatus}
             onDelete={handleDeleteUser}
             onResetPassword={openResetPasswordModal}
+            onSetMembership={openMembershipModal}
+            onSetQuota={openQuotaModal}
           />
         </Card>
       </main>
@@ -321,6 +413,29 @@ export const UserManagement: React.FC = () => {
         onReset={handleResetPassword}
         isResetting={isResetting}
       />
+
+      {/* 设置会员弹窗 */}
+      <SetMembershipModal
+        isOpen={isMembershipModalOpen}
+        onClose={() => setIsMembershipModalOpen(false)}
+        username={selectedUsername}
+        plans={plans}
+        form={membershipForm}
+        setForm={setMembershipForm}
+        onSave={handleSaveMembership}
+        isSaving={isSavingMembership}
+      />
+
+      {/* 调整配额弹窗 */}
+      <SetQuotaModal
+        isOpen={isQuotaModalOpen}
+        onClose={() => setIsQuotaModalOpen(false)}
+        username={selectedUsername}
+        form={quotaForm}
+        setForm={setQuotaForm}
+        onSave={handleSaveQuota}
+        isSaving={isSavingQuota}
+      />
     </div>
   );
 };
@@ -335,16 +450,19 @@ const UserTable: React.FC<{
   onUpdateStatus: (userId: string, status: string) => void;
   onDelete: (userId: string, username: string) => void;
   onResetPassword: (userId: string, username: string) => void;
-}> = ({ users, currentUserId, onUpdateRole, onUpdateStatus, onDelete, onResetPassword }) => (
+  onSetMembership: (userId: string, username: string, user: AdminUser) => void;
+  onSetQuota: (userId: string, username: string, user: AdminUser) => void;
+}> = ({ users, currentUserId, onUpdateRole, onUpdateStatus, onDelete, onResetPassword, onSetMembership, onSetQuota }) => (
   <div className="overflow-x-auto">
     <table className="w-full">
       <thead>
         <tr className="border-b border-gray-200">
           <th className="text-left py-3 px-4 font-medium text-gray-700">用户名</th>
           <th className="text-left py-3 px-4 font-medium text-gray-700">角色</th>
+          <th className="text-left py-3 px-4 font-medium text-gray-700">会员等级</th>
+          <th className="text-left py-3 px-4 font-medium text-gray-700">配额</th>
           <th className="text-left py-3 px-4 font-medium text-gray-700">状态</th>
           <th className="text-left py-3 px-4 font-medium text-gray-700">创建时间</th>
-          <th className="text-left py-3 px-4 font-medium text-gray-700">最后登录</th>
           <th className="text-right py-3 px-4 font-medium text-gray-700">操作</th>
         </tr>
       </thead>
@@ -372,6 +490,19 @@ const UserTable: React.FC<{
               </select>
             </td>
             <td className="py-3 px-4">
+              <MembershipLevelBadge level={u.membership_level} expiresAt={u.membership_expires_at} />
+            </td>
+            <td className="py-3 px-4">
+              <div className="flex items-center gap-2 text-xs">
+                <span className="flex items-center gap-1 text-blue-600">
+                  <Image size={12} /> {u.image_quota ?? 0}
+                </span>
+                <span className="flex items-center gap-1 text-purple-600">
+                  <Zap size={12} /> {u.premium_quota ?? 0}
+                </span>
+              </div>
+            </td>
+            <td className="py-3 px-4">
               <select
                 value={u.status}
                 onChange={(e) => onUpdateStatus(u.id, e.target.value)}
@@ -387,11 +518,22 @@ const UserTable: React.FC<{
             <td className="py-3 px-4 text-sm text-gray-500">
               {new Date(u.created_at).toLocaleDateString('zh-CN')}
             </td>
-            <td className="py-3 px-4 text-sm text-gray-500">
-              {u.last_login_at ? new Date(u.last_login_at).toLocaleString('zh-CN') : '-'}
-            </td>
             <td className="py-3 px-4 text-right">
               <div className="flex items-center justify-end gap-1">
+                <button
+                  onClick={() => onSetMembership(u.id, u.username, u)}
+                  className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded"
+                  title="设置会员"
+                >
+                  <Crown size={16} />
+                </button>
+                <button
+                  onClick={() => onSetQuota(u.id, u.username, u)}
+                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  title="调整配额"
+                >
+                  <Zap size={16} />
+                </button>
                 <button
                   onClick={() => onResetPassword(u.id, u.username)}
                   className="p-2 text-gray-500 hover:text-banana-600 hover:bg-banana-50 rounded"
@@ -473,6 +615,120 @@ const ResetPasswordModal: React.FC<{
       <div className="flex justify-end gap-3 pt-4">
         <Button variant="ghost" onClick={onClose}>取消</Button>
         <Button variant="primary" onClick={onReset} loading={isResetting}>确认重置</Button>
+      </div>
+    </div>
+  </Modal>
+);
+
+// 会员等级徽章组件
+const LEVEL_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
+  free: { label: '免费', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  basic: { label: '基础', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  premium: { label: '高级', color: 'text-purple-600', bgColor: 'bg-purple-100' },
+};
+
+const MembershipLevelBadge: React.FC<{ level?: string; expiresAt?: string }> = ({ level, expiresAt }) => {
+  const config = LEVEL_CONFIG[level || 'free'] || LEVEL_CONFIG.free;
+  const isExpired = expiresAt && new Date(expiresAt) < new Date();
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded ${config.color} ${config.bgColor}`}>
+        <Crown size={10} />
+        {config.label}
+        {isExpired && <span className="text-red-500">(已过期)</span>}
+      </span>
+      {expiresAt && !isExpired && (
+        <span className="text-[10px] text-gray-400">
+          {new Date(expiresAt).toLocaleDateString('zh-CN')}到期
+        </span>
+      )}
+    </div>
+  );
+};
+
+// 设置会员弹窗组件
+const SetMembershipModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  username: string;
+  plans: MembershipPlan[];
+  form: { plan_id: string; expires_at: string };
+  setForm: (v: { plan_id: string; expires_at: string }) => void;
+  onSave: () => void;
+  isSaving: boolean;
+}> = ({ isOpen, onClose, username, plans, form, setForm, onSave, isSaving }) => (
+  <Modal isOpen={isOpen} onClose={onClose} title={`设置会员 - ${username}`}>
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">选择套餐</label>
+        <select
+          value={form.plan_id}
+          onChange={(e) => setForm({ ...form, plan_id: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+        >
+          <option value="">请选择套餐</option>
+          {plans.map((plan) => (
+            <option key={plan.id} value={plan.id}>
+              {plan.name} - {plan.level} ({plan.price}元/{plan.duration_days}天)
+            </option>
+          ))}
+        </select>
+      </div>
+      <Input
+        label="过期时间（可选）"
+        type="date"
+        value={form.expires_at}
+        onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
+      />
+      <p className="text-xs text-gray-500">留空则根据套餐时长自动计算过期时间</p>
+      <div className="flex justify-end gap-3 pt-4">
+        <Button variant="ghost" onClick={onClose}>取消</Button>
+        <Button variant="primary" onClick={onSave} loading={isSaving}>保存</Button>
+      </div>
+    </div>
+  </Modal>
+);
+
+// 调整配额弹窗组件
+const SetQuotaModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  username: string;
+  form: { image_quota: number; premium_quota: number };
+  setForm: (v: { image_quota: number; premium_quota: number }) => void;
+  onSave: () => void;
+  isSaving: boolean;
+}> = ({ isOpen, onClose, username, form, setForm, onSave, isSaving }) => (
+  <Modal isOpen={isOpen} onClose={onClose} title={`调整配额 - ${username}`}>
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <span className="flex items-center gap-1"><Image size={14} className="text-blue-500" /> 图片生成配额</span>
+        </label>
+        <input
+          type="number"
+          min="0"
+          value={form.image_quota}
+          onChange={(e) => setForm({ ...form, image_quota: parseInt(e.target.value) || 0 })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          <span className="flex items-center gap-1"><Zap size={14} className="text-purple-500" /> 高级功能配额</span>
+        </label>
+        <input
+          type="number"
+          min="0"
+          value={form.premium_quota}
+          onChange={(e) => setForm({ ...form, premium_quota: parseInt(e.target.value) || 0 })}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+        />
+      </div>
+      <div className="flex justify-end gap-3 pt-4">
+        <Button variant="ghost" onClick={onClose}>取消</Button>
+        <Button variant="primary" onClick={onSave} loading={isSaving}>保存</Button>
       </div>
     </div>
   </Modal>

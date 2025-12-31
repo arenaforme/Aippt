@@ -5,6 +5,7 @@ import logging
 from flask import Blueprint, request, current_app, g
 from models import db, Project, Page, PageImageVersion, Task
 from utils import success_response, error_response, not_found, bad_request, login_required
+from utils.auth import feature_required
 from services import AIService, FileService, ProjectContext
 from services.task_manager import task_manager, generate_single_page_image_task, edit_page_image_task
 from datetime import datetime
@@ -308,6 +309,7 @@ def generate_page_description(project_id, page_id):
 
 @page_bp.route('/<project_id>/pages/<page_id>/generate/image', methods=['POST'])
 @login_required
+@feature_required('generate_image', consume_quota=True)
 def generate_page_image(project_id, page_id):
     """
     POST /api/projects/{project_id}/pages/{page_id}/generate/image - Generate single page image

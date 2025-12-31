@@ -7,9 +7,11 @@ from .file_controller import file_bp
 from .material_controller import material_bp
 from .settings_controller import settings_bp
 from .pdf_convert_controller import pdf_convert_bp
+from .order_controller import order_bp
 
 __all__ = [
     'project_bp', 'page_bp', 'template_bp', 'user_template_bp',
-    'export_bp', 'file_bp', 'material_bp', 'settings_bp', 'pdf_convert_bp'
+    'export_bp', 'file_bp', 'material_bp', 'settings_bp', 'pdf_convert_bp',
+    'order_bp'
 ]
 

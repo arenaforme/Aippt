@@ -87,6 +87,29 @@ class Config:
     # 可选值: 'zh' (中文), 'ja' (日本語), 'en' (English), 'auto' (自动)
     OUTPUT_LANGUAGE = os.getenv('OUTPUT_LANGUAGE', 'zh')
 
+    # 微信支付配置
+    WECHAT_APP_ID = os.getenv('WECHAT_APP_ID', '')
+    WECHAT_MCH_ID = os.getenv('WECHAT_MCH_ID', '')  # 商户号
+    WECHAT_API_KEY = os.getenv('WECHAT_API_KEY', '')  # API密钥
+    WECHAT_CERT_PATH = os.getenv('WECHAT_CERT_PATH', '')  # 证书路径
+    WECHAT_KEY_PATH = os.getenv('WECHAT_KEY_PATH', '')  # 私钥路径
+    WECHAT_NOTIFY_URL = os.getenv('WECHAT_NOTIFY_URL', '')  # 支付回调URL
+
+    # 支付宝配置
+    ALIPAY_APP_ID = os.getenv('ALIPAY_APP_ID', '')
+    ALIPAY_PRIVATE_KEY = os.getenv('ALIPAY_PRIVATE_KEY', '')  # 应用私钥
+    ALIPAY_PUBLIC_KEY = os.getenv('ALIPAY_PUBLIC_KEY', '')  # 支付宝公钥
+    ALIPAY_NOTIFY_URL = os.getenv('ALIPAY_NOTIFY_URL', '')  # 支付回调URL
+    ALIPAY_SANDBOX = os.getenv('ALIPAY_SANDBOX', 'false').lower() == 'true'  # 沙箱模式
+
+    # CBB 聚合支付配置
+    CBB_GATEWAY_URL = os.getenv('CBB_GATEWAY_URL', 'https://api.webtrn.cn')
+    CBB_CLIENT_ID = os.getenv('CBB_CLIENT_ID', '')
+    CBB_CLIENT_SECRET = os.getenv('CBB_CLIENT_SECRET', '')
+    CBB_CUSTOMER_CODE = os.getenv('CBB_CUSTOMER_CODE', '')
+    CBB_PRIVATE_KEY = os.getenv('CBB_PRIVATE_KEY', '')  # RSA私钥（Base64编码）
+    CBB_PUBLIC_KEY = os.getenv('CBB_PUBLIC_KEY', '')  # RSA公钥（Base64编码）
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""

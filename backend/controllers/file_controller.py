@@ -1,9 +1,10 @@
 """
 File Controller - handles static file serving
 """
-from flask import Blueprint, send_from_directory, current_app
+from flask import Blueprint, send_from_directory, current_app, g
 from utils import error_response, not_found
 from utils.path_utils import find_file_with_prefix
+from utils.auth import login_required, feature_required
 import os
 from pathlib import Path
 from werkzeug.utils import secure_filename
@@ -15,15 +16,31 @@ file_bp = Blueprint('files', __name__, url_prefix='/files')
 def serve_file(project_id, file_type, filename):
     """
     GET /files/{project_id}/{type}/{filename} - Serve static files
-    
+
     Args:
         project_id: Project UUID
-        file_type: 'template' or 'pages'
+        file_type: 'template', 'pages', 'materials' or 'exports'
         filename: File name
+
+    Note:
+        - template/pages/materials: 公开访问（URL使用UUID，不可猜测）
+        - exports: 需要高级会员权限（download）
     """
+    from services.membership_service import MembershipService
+    from utils.auth import get_current_user_optional
+
     try:
         if file_type not in ['template', 'pages', 'materials', 'exports']:
             return not_found('File')
+
+        # exports 类型需要登录并检查下载权限（高级会员功能）
+        if file_type == 'exports':
+            user = get_current_user_optional()
+            if not user:
+                return error_response('UNAUTHORIZED', '需要登录才能下载导出文件', 401)
+            has_permission, error_msg = MembershipService.check_feature_permission(user, 'download')
+            if not has_permission:
+                return error_response('PERMISSION_DENIED', error_msg or '需要高级会员才能下载导出文件', 403)
         
         # Construct file path
         file_dir = os.path.join(
@@ -162,12 +179,17 @@ def serve_mineru_file(extract_id, filepath):
 
 
 @file_bp.route('/tools/exports/<filename>', methods=['GET'])
+@login_required
+@feature_required('download', consume_quota=False)
 def serve_tools_export(filename):
     """
     GET /files/tools/exports/{filename} - Serve tool export files (PDF to PPTX, etc.)
 
     Args:
         filename: File name
+
+    Note:
+        需要高级会员权限（download）
     """
     try:
         safe_filename = secure_filename(filename)

@@ -15,6 +15,8 @@ import {
   Upload,
   Image as ImageIcon,
   ImagePlus,
+  Crown,
+  Lock,
 } from 'lucide-react';
 import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, Markdown, UserMenu, ExportProgressModal } from '@/components/shared';
 import { MaterialGeneratorModal } from '@/components/shared/MaterialGeneratorModal';
@@ -28,6 +30,7 @@ import { getImageUrl } from '@/api/client';
 import { getPageImageVersions, setCurrentImageVersion, updateProject, uploadTemplate } from '@/api/endpoints';
 import type { ImageVersion, DescriptionContent } from '@/types';
 import { normalizeErrorMessage } from '@/utils';
+import * as membershipApi from '@/api/membership';
 
 export const SlidePreview: React.FC = () => {
   const navigate = useNavigate();
@@ -526,6 +529,39 @@ export const SlidePreview: React.FC = () => {
 
   const handleExport = async (type: 'pptx' | 'pdf' | 'editable-pptx') => {
     setShowExportMenu(false);
+
+    // 高级功能需要检查权限
+    if (type === 'editable-pptx') {
+      try {
+        const result = await membershipApi.checkPermission('export_editable_pptx');
+        if (!result.has_permission) {
+          show({
+            message: result.error || '需要高级会员才能使用此功能',
+            type: 'error',
+            action: {
+              label: '开通会员',
+              onClick: () => navigate('/membership'),
+            },
+          });
+          return;
+        }
+        // 检查配额
+        if (result.quota && result.quota.remaining <= 0) {
+          show({
+            message: '高级功能配额不足，请升级会员',
+            type: 'error',
+            action: {
+              label: '升级会员',
+              onClick: () => navigate('/membership'),
+            },
+          });
+          return;
+        }
+      } catch (error) {
+        // 权限检查失败，继续尝试导出（后端会再次检查）
+      }
+    }
+
     if (type === 'pptx') {
       await exportPPTX();
     } else if (type === 'pdf') {
@@ -733,7 +769,7 @@ export const SlidePreview: React.FC = () => {
               <span className="sm:hidden">导出</span>
             </Button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+              <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
                 <button
                   onClick={() => handleExport('pptx')}
                   className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
@@ -742,9 +778,13 @@ export const SlidePreview: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleExport('editable-pptx')}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
                 >
-                  导出可编辑 PPTX
+                  <span>导出可编辑 PPTX</span>
+                  <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                    <Crown size={10} />
+                    高级
+                  </span>
                 </button>
                 {lastEditablePPTXUrl && (
                   <a
