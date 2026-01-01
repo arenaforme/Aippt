@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Project, Task } from '@/types';
 import * as api from '@/api/endpoints';
-import { debounce, normalizeProject, normalizeErrorMessage } from '@/utils';
+import { debounce, normalizeProject, normalizeErrorMessage, extractErrorMessage } from '@/utils';
 
 interface ProjectState {
   // 状态
@@ -181,7 +181,7 @@ const debouncedUpdatePage = debounce(
         localStorage.setItem('currentProjectId', project.id!);
       }
     } catch (error: any) {
-      set({ error: normalizeErrorMessage(error.message || '创建项目失败') });
+      set({ error: normalizeErrorMessage(extractErrorMessage(error)) });
       throw error;
     } finally {
       set({ isGlobalLoading: false });
@@ -375,7 +375,8 @@ const debouncedUpdatePage = debounce(
       }
     } catch (error: any) {
       console.error('[异步任务] 启动失败:', error);
-      set({ error: error.message || '任务启动失败', isGlobalLoading: false });
+      const errorMsg = extractErrorMessage(error);
+      set({ error: normalizeErrorMessage(errorMsg), isGlobalLoading: false });
       throw error;
     }
   },
@@ -645,7 +646,7 @@ const debouncedUpdatePage = debounce(
       // 刷新项目数据
       await get().syncProject();
     } catch (error: any) {
-      set({ error: normalizeErrorMessage(error.message || '生成描述失败') });
+      set({ error: normalizeErrorMessage(extractErrorMessage(error)) });
       throw error;
     } finally {
       // 清除生成状态
@@ -700,7 +701,7 @@ const debouncedUpdatePage = debounce(
       const { pageGeneratingTasks } = get();
       const newTasks = { ...pageGeneratingTasks };
       delete newTasks[pageId];
-      set({ pageGeneratingTasks: newTasks, error: normalizeErrorMessage(error.message || '生成图片失败') });
+      set({ pageGeneratingTasks: newTasks, error: normalizeErrorMessage(extractErrorMessage(error)) });
       throw error;
     }
   },
@@ -810,7 +811,7 @@ const debouncedUpdatePage = debounce(
       const { pageGeneratingTasks } = get();
       const newTasks = { ...pageGeneratingTasks };
       delete newTasks[pageId];
-      set({ pageGeneratingTasks: newTasks, error: normalizeErrorMessage(error.message || '编辑图片失败') });
+      set({ pageGeneratingTasks: newTasks, error: normalizeErrorMessage(extractErrorMessage(error)) });
       throw error;
     }
   },

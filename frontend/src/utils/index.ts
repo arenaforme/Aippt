@@ -99,13 +99,33 @@ export function generateId(): string {
 }
 
 /**
+ * 从 Axios 错误对象中提取后端返回的错误消息
+ * 后端返回格式: { success: false, error: { code: string, message: string } }
+ */
+export function extractErrorMessage(error: any): string {
+  // 优先从后端响应中提取错误消息
+  if (error?.response?.data?.error?.message) {
+    return error.response.data.error.message;
+  }
+  // 兼容旧格式: { message: string }
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  // 使用 Axios 错误消息
+  if (error?.message) {
+    return error.message;
+  }
+  return '操作失败';
+}
+
+/**
  * 将错误消息转换为友好的中文提示
  */
 export function normalizeErrorMessage(errorMessage: string | null | undefined): string {
   if (!errorMessage) return '操作失败';
-  
+
   const message = errorMessage.toLowerCase();
-  
+
   if (message.includes('no template image found')) {
     return '当前项目还没有模板，请先点击页面工具栏的"更换模板"按钮，选择或上传一张模板图片后再生成。';
   } else if (message.includes('page must have description content')) {
@@ -113,7 +133,7 @@ export function normalizeErrorMessage(errorMessage: string | null | undefined): 
   } else if (message.includes('image already exists')) {
     return '该页面已经有图片，如需重新生成，请在生成时选择"重新生成"或稍后重试。';
   }
-  
+
   return errorMessage;
 }
 

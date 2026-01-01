@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple
 from flask import current_app
 
-from models import db, User, AuditLog, SystemConfig
+from models import db, User, AuditLog, SystemConfig, MembershipPlan
 from utils.validators import validate_password
 
 
@@ -160,6 +160,13 @@ class AuthService:
         # 创建用户
         user = User(username=username, role='user', status='active')
         user.set_password(password)
+
+        # 初始化免费套餐配额
+        default_plan = MembershipPlan.get_default_plan()
+        if default_plan:
+            user.image_quota = default_plan.image_quota
+            user.premium_quota = default_plan.premium_quota
+
         db.session.add(user)
         db.session.commit()
 

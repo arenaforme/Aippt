@@ -28,25 +28,41 @@ def success_response(data: Any = None, message: str = "Success", status_code: in
     return jsonify(response), status_code
 
 
-def error_response(error_code: str, message: str, status_code: int = 400):
+def error_response(error_code_or_message: str, message_or_status: any = None, status_code: int = None):
     """
     Generate an error response
-    
+
+    支持两种调用方式：
+    1. error_response('ERROR_CODE', 'message', status_code)  # 三参数
+    2. error_response('message', status_code)  # 两参数（向后兼容）
+
     Args:
-        error_code: Error code identifier
-        message: Error message
-        status_code: HTTP status code
-    
+        error_code_or_message: Error code (三参数) 或 Error message (两参数)
+        message_or_status: Error message (三参数) 或 HTTP status code (两参数)
+        status_code: HTTP status code (仅三参数时使用)
+
     Returns:
         Flask response with JSON format
     """
+    # 判断调用方式：如果第二个参数是整数，则为两参数调用
+    if isinstance(message_or_status, int):
+        # 两参数调用：error_response('message', status_code)
+        message = error_code_or_message
+        actual_status_code = message_or_status
+        error_code = 'ERROR'  # 默认错误码
+    else:
+        # 三参数调用：error_response('ERROR_CODE', 'message', status_code)
+        error_code = error_code_or_message
+        message = message_or_status if message_or_status else ''
+        actual_status_code = status_code if status_code else 400
+
     return jsonify({
         "success": False,
         "error": {
             "code": error_code,
             "message": message
         }
-    }), status_code
+    }), actual_status_code
 
 
 # Common error responses
