@@ -202,11 +202,11 @@ export const Membership: React.FC = () => {
 
         {/* 套餐列表 */}
         <h2 className="text-xl font-bold text-gray-800 mb-4">升级套餐</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {plans.map((plan) => (
             <Card
               key={plan.id}
-              className={`p-6 relative ${
+              className={`p-5 relative ${
                 plan.level === 'premium' ? 'border-2 border-purple-500' : ''
               }`}
             >
@@ -215,27 +215,27 @@ export const Membership: React.FC = () => {
                   推荐
                 </div>
               )}
-              <div className="mb-4">
-                <h3 className="text-lg font-bold text-gray-800">{plan.name}</h3>
+              <div className="mb-3">
+                <h3 className="text-base font-bold text-gray-800">{plan.name}</h3>
                 <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-3xl font-bold text-gray-900">¥{plan.price}</span>
-                  <span className="text-gray-500">{PERIOD_CONFIG[plan.period_type]}</span>
+                  <span className="text-2xl font-bold text-gray-900">¥{plan.price}</span>
+                  <span className="text-gray-500 text-sm">{PERIOD_CONFIG[plan.period_type]}</span>
                 </div>
               </div>
 
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-center gap-2 text-sm text-gray-600">
-                  <Image size={16} className="text-blue-500" />
-                  <span>{plan.image_quota} 张图片生成{plan.period_type !== 'none' ? '/月' : ''}</span>
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-center gap-2 text-xs text-gray-600">
+                  <Image size={14} className="text-blue-500" />
+                  <span>{plan.image_quota} 张图片{plan.period_type !== 'none' ? '/月' : ''}</span>
                 </li>
                 {plan.premium_quota > 0 && (
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <Zap size={16} className="text-purple-500" />
+                  <li className="flex items-center gap-2 text-xs text-gray-600">
+                    <Zap size={14} className="text-purple-500" />
                     <span>{plan.premium_quota} 次高级功能{plan.period_type !== 'none' ? '/月' : ''}</span>
                   </li>
                 )}
-                <li className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={16} className="text-gray-400" />
+                <li className="flex items-center gap-2 text-xs text-gray-600">
+                  <Clock size={14} className="text-gray-400" />
                   <span>{plan.duration_days} 天有效期</span>
                 </li>
               </ul>

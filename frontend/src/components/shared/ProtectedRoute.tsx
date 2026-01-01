@@ -49,7 +49,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // 需要管理员权限但用户不是管理员
   if (requireAdmin && user?.role !== 'admin') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;
@@ -63,9 +63,9 @@ export const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children 
   const { isAuthenticated } = useAuthStore();
   const location = useLocation();
 
-  // 如果已登录，跳转到之前的页面或首页
+  // 如果已登录，跳转到之前的页面或应用首页
   if (isAuthenticated) {
-    const from = (location.state as any)?.from?.pathname || '/';
+    const from = (location.state as any)?.from?.pathname || '/app';
     return <Navigate to={from} replace />;
   }
 

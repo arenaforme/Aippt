@@ -75,8 +75,8 @@ export const UserMenu: React.FC = () => {
     } catch (error) {
       console.error('登出失败:', error);
     } finally {
-      // 无论成功失败都跳转到登录页
-      navigate('/login');
+      // 无论成功失败都跳转到首页
+      navigate('/');
     }
   };
 

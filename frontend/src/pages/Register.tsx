@@ -3,7 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, User, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { UserPlus, User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
 import { Button, Input, Card, useToast } from '@/components/shared';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getRegistrationStatus } from '@/api/auth';
@@ -118,12 +118,21 @@ export const Register: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-banana-50 to-banana-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8">
+        {/* 返回首页 */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-banana-600 mb-6 transition-colors"
+        >
+          <ArrowLeft size={16} />
+          返回首页
+        </Link>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-banana-100 rounded-full mb-4">
             <span className="text-3xl">🍌</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Banana Slides</h1>
+          <h1 className="text-2xl font-bold text-gray-900">AI演示眼</h1>
           <p className="text-gray-500 mt-2">创建您的账户</p>
         </div>
 
