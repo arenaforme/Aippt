@@ -19,6 +19,7 @@ load_dotenv(dotenv_path=_env_file, override=True)
 
 from flask import Flask
 from flask_cors import CORS
+from werkzeug.middleware.proxy_fix import ProxyFix
 from models import db
 from config import Config
 from controllers.material_controller import material_bp, material_global_bp
@@ -102,6 +103,10 @@ def create_app():
     # Initialize extensions
     db.init_app(app)
     CORS(app, origins=cors_origins)
+
+    # 支持反向代理（Cloudflare/Nginx），正确处理 X-Forwarded-Proto 等头
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
     # Database migrations (Alembic via Flask-Migrate)
     Migrate(app, db)
     
