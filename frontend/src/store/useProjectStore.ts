@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Project, Task } from '@/types';
 import * as api from '@/api/endpoints';
-import { debounce, normalizeProject, normalizeErrorMessage, extractErrorMessage } from '@/utils';
+import { debounce, normalizeProject, normalizeErrorMessage, extractErrorMessage, appendTokenToUrl } from '@/utils';
 
 interface ProjectState {
   // 状态
@@ -832,8 +832,8 @@ const debouncedUpdatePage = debounce(
         throw new Error('导出链接获取失败');
       }
 
-      // 使用浏览器直接下载链接，避免 axios 受带宽和超时影响
-      window.open(downloadUrl, '_blank');
+      // 使用浏览器直接下载链接，附加 token 以通过认证
+      window.open(appendTokenToUrl(downloadUrl), '_blank');
     } catch (error: any) {
       set({ error: error.message || '导出失败' });
     } finally {
@@ -857,8 +857,8 @@ const debouncedUpdatePage = debounce(
         throw new Error('导出链接获取失败');
       }
 
-      // 使用浏览器直接下载链接，避免 axios 受带宽和超时影响
-      window.open(downloadUrl, '_blank');
+      // 使用浏览器直接下载链接，附加 token 以通过认证
+      window.open(appendTokenToUrl(downloadUrl), '_blank');
     } catch (error: any) {
       set({ error: error.message || '导出失败' });
     } finally {
@@ -927,15 +927,16 @@ const debouncedUpdatePage = debounce(
             statusResponse.data?.download_url_absolute;
 
           if (downloadUrl) {
-            // 保存下载链接到 state 和 localStorage
+            // 保存下载链接到 state 和 localStorage（附加 token）
+            const urlWithToken = appendTokenToUrl(downloadUrl);
             set({
-              lastEditablePPTXUrl: downloadUrl,
+              lastEditablePPTXUrl: urlWithToken,
               editablePPTXExportStatus: 'completed',
             });
-            localStorage.setItem('lastEditablePPTXUrl', downloadUrl);
+            localStorage.setItem('lastEditablePPTXUrl', urlWithToken);
             // 使用 <a> 标签触发下载
             const link = document.createElement('a');
-            link.href = downloadUrl;
+            link.href = urlWithToken;
             link.download = '';
             document.body.appendChild(link);
             link.click();

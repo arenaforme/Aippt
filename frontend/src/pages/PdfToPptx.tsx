@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Download, ArrowLeft, Loader2, CheckCircle, XCircle, Crown } from 'lucide-react';
 import * as api from '@/api/endpoints';
 import * as membershipApi from '@/api/membership';
+import { appendTokenToUrl } from '@/utils';
 
 type ConvertStatus = 'idle' | 'uploading' | 'processing' | 'completed' | 'failed';
 
@@ -136,7 +137,7 @@ export default function PdfToPptx() {
   // 下载文件
   const handleDownload = () => {
     if (downloadUrl) {
-      window.open(downloadUrl, '_blank');
+      window.open(appendTokenToUrl(downloadUrl), '_blank');
     }
   };
 

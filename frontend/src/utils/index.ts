@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import type { Project, Page } from '@/types';
+import { useAuthStore } from '@/store/useAuthStore';
 
 /**
  * 合并 className (支持 Tailwind CSS)
@@ -135,5 +136,16 @@ export function normalizeErrorMessage(errorMessage: string | null | undefined): 
   }
 
   return errorMessage;
+}
+
+/**
+ * 为下载 URL 附加认证 token
+ * 用于 window.open 等无法携带 Authorization header 的场景
+ */
+export function appendTokenToUrl(url: string): string {
+  const token = useAuthStore.getState().token;
+  if (!token) return url;
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}token=${encodeURIComponent(token)}`;
 }
 
