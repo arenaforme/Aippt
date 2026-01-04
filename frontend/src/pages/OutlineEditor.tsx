@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Save, ArrowRight, Plus, FileText, Sparkle } from 'lucide-react';
 import {
   DndContext,
@@ -18,7 +19,10 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button, Loading, useConfirm, useToast, AiRefineInput, FilePreviewModal, ProjectResourcesList, UserMenu } from '@/components/shared';
+import { cn } from '@/lib/utils';
+import { fadeInUp, staggerContainer, staggerItem } from '@/lib/animations';
+import { Button } from '@/components/ui/button';
+import { Loading, useConfirm, useToast, AiRefineInput, FilePreviewModal, ProjectResourcesList, UserMenu } from '@/components/shared';
 import { OutlineCard } from '@/components/outline/OutlineCard';
 import { useProjectStore } from '@/store/useProjectStore';
 import { refineOutline } from '@/api/endpoints';
@@ -160,9 +164,14 @@ export const OutlineEditor: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* 顶栏 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-3 md:px-6 py-2 md:py-3 flex-shrink-0">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex flex-col">
+      {/* 顶栏 - 毛玻璃效果 */}
+      <motion.header
+        className="bg-background/80 backdrop-blur-md shadow-sm border-b border-border/50 px-3 md:px-6 py-2 md:py-3 flex-shrink-0 sticky top-0 z-10"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* 左侧：Logo 和标题 */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
@@ -185,7 +194,7 @@ export const OutlineEditor: React.FC = () => {
               <span className="text-xl md:text-2xl">🍌</span>
               <span className="text-base md:text-xl font-bold">AI演示眼</span>
             </div>
-            <span className="text-gray-400 hidden lg:inline">|</span>
+            <span className="text-muted-foreground hidden lg:inline">|</span>
             <span className="text-sm md:text-lg font-semibold hidden lg:inline">编辑大纲</span>
           </div>
           
@@ -236,36 +245,46 @@ export const OutlineEditor: React.FC = () => {
             onStatusChange={setIsAiRefining}
           />
         </div>
-      </header>
+      </motion.header>
 
       {/* 上下文栏 */}
-      <div className="bg-banana-50 border-b border-banana-100 px-3 md:px-6 py-2 md:py-3 max-h-32 overflow-y-auto flex-shrink-0">
+      <motion.div
+        className="bg-accent border-b border-accent px-3 md:px-6 py-2 md:py-3 max-h-32 overflow-y-auto flex-shrink-0"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
         <div className="flex items-start gap-1.5 md:gap-2 text-xs md:text-sm">
           {currentProject.creation_type === 'idea' && (
-            <span className="font-medium text-gray-700 flex-shrink-0 flex items-center">
+            <span className="font-medium text-muted-foreground flex-shrink-0 flex items-center">
               <Sparkle size={12} className="mr-1" /> PPT构想:
-              <span className="text-gray-900 font-normal ml-2 break-words whitespace-pre-wrap">{currentProject.idea_prompt}</span>
+              <span className="text-foreground font-normal ml-2 break-words whitespace-pre-wrap">{currentProject.idea_prompt}</span>
             </span>
           )}
           {currentProject.creation_type === 'outline' && (
-            <span className="font-medium text-gray-700 flex-shrink-0 flex items-center">
+            <span className="font-medium text-muted-foreground flex-shrink-0 flex items-center">
               <FileText size={12} className="mr-1" /> 大纲:
-              <span className="text-gray-900 font-normal ml-2 break-words whitespace-pre-wrap">{currentProject.outline_text || currentProject.idea_prompt}</span>
+              <span className="text-foreground font-normal ml-2 break-words whitespace-pre-wrap">{currentProject.outline_text || currentProject.idea_prompt}</span>
             </span>
           )}
           {currentProject.creation_type === 'descriptions' && (
-            <span className="font-medium text-gray-700 flex-shrink-0 flex items-center">
+            <span className="font-medium text-muted-foreground flex-shrink-0 flex items-center">
               <FileText size={12} className="mr-1" /> 描述:
-              <span className="text-gray-900 font-normal ml-2 break-words whitespace-pre-wrap">{currentProject.description_text || currentProject.idea_prompt}</span>
+              <span className="text-foreground font-normal ml-2 break-words whitespace-pre-wrap">{currentProject.description_text || currentProject.idea_prompt}</span>
             </span>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* 主内容区 */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* 左侧：大纲列表 */}
-        <div className="flex-1 p-3 md:p-6 overflow-y-auto min-h-0">
+        <motion.div
+          className="flex-1 p-3 md:p-6 overflow-y-auto min-h-0"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
           <div className="max-w-4xl mx-auto">
             {/* 操作按钮 */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 md:mb-6">
@@ -318,12 +337,12 @@ export const OutlineEditor: React.FC = () => {
             {currentProject.pages.length === 0 ? (
               <div className="text-center py-20">
                 <div className="flex justify-center mb-4">
-                  <FileText size={64} className="text-gray-300" />
+                  <FileText size={64} className="text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
                   还没有页面
                 </h3>
-                <p className="text-gray-500 mb-6">
+                <p className="text-muted-foreground mb-6">
                   点击"添加页面"手动创建，或"自动生成大纲"让 AI 帮你完成
                 </p>
               </div>
@@ -355,26 +374,31 @@ export const OutlineEditor: React.FC = () => {
               </DndContext>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {/* 右侧：预览 */}
-        <div className="hidden md:block w-96 bg-white border-l border-gray-200 p-4 md:p-6 overflow-y-auto flex-shrink-0">
-          <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">预览</h3>
+        <motion.div
+          className="hidden md:block w-96 bg-card border-l border p-4 md:p-6 overflow-y-auto flex-shrink-0"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">预览</h3>
           
           {selectedPage ? (
             <div className="space-y-3 md:space-y-4">
               <div>
-                <div className="text-xs md:text-sm text-gray-500 mb-1">标题</div>
-                <div className="text-base md:text-lg font-semibold text-gray-900">
+                <div className="text-xs md:text-sm text-muted-foreground mb-1">标题</div>
+                <div className="text-base md:text-lg font-semibold text-foreground">
                   {selectedPage.outline_content.title}
                 </div>
               </div>
               <div>
-                <div className="text-xs md:text-sm text-gray-500 mb-2">要点</div>
+                <div className="text-xs md:text-sm text-muted-foreground mb-2">要点</div>
                 <ul className="space-y-1.5 md:space-y-2">
                   {selectedPage.outline_content.points.map((point, idx) => (
-                    <li key={idx} className="flex items-start text-sm md:text-base text-gray-700">
-                      <span className="mr-2 text-banana-500 flex-shrink-0">•</span>
+                    <li key={idx} className="flex items-start text-sm md:text-base text-muted-foreground">
+                      <span className="mr-2 text-primary flex-shrink-0">•</span>
                       <span>{point}</span>
                     </li>
                   ))}
@@ -382,30 +406,30 @@ export const OutlineEditor: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 md:py-10 text-gray-400">
+            <div className="text-center py-8 md:py-10 text-muted-foreground">
               <div className="text-3xl md:text-4xl mb-2">👆</div>
               <p className="text-sm md:text-base">点击左侧卡片查看详情</p>
             </div>
           )}
-        </div>
-        
+        </motion.div>
+
         {/* 移动端预览：底部抽屉 */}
         {selectedPage && (
-          <div className="md:hidden fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 p-4 max-h-[50vh] overflow-y-auto shadow-lg z-50">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">预览</h3>
+          <div className="md:hidden fixed inset-x-0 bottom-0 bg-card border-t border p-4 max-h-[50vh] overflow-y-auto shadow-lg z-50">
+            <h3 className="text-sm font-semibold text-foreground mb-2">预览</h3>
             <div className="space-y-2">
               <div>
-                <div className="text-xs text-gray-500 mb-1">标题</div>
-                <div className="text-sm font-semibold text-gray-900">
+                <div className="text-xs text-muted-foreground mb-1">标题</div>
+                <div className="text-sm font-semibold text-foreground">
                   {selectedPage.outline_content.title}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-gray-500 mb-1">要点</div>
+                <div className="text-xs text-muted-foreground mb-1">要点</div>
                 <ul className="space-y-1">
                   {selectedPage.outline_content.points.map((point, idx) => (
-                    <li key={idx} className="flex items-start text-xs text-gray-700">
-                      <span className="mr-1.5 text-banana-500 flex-shrink-0">•</span>
+                    <li key={idx} className="flex items-start text-xs text-muted-foreground">
+                      <span className="mr-1.5 text-primary flex-shrink-0">•</span>
                       <span>{point}</span>
                     </li>
                   ))}

@@ -16,7 +16,7 @@ import type { MembershipStatus } from '@/api/membership';
 
 // 会员等级配置
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  free: { label: '免费用户', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  free: { label: '免费用户', color: 'text-muted-foreground', bgColor: 'bg-muted' },
   basic: { label: '基础会员', color: 'text-blue-600', bgColor: 'bg-blue-100' },
   premium: { label: '高级会员', color: 'text-purple-600', bgColor: 'bg-purple-100' },
   admin: { label: '管理员', color: 'text-red-600', bgColor: 'bg-red-100' },
@@ -136,34 +136,34 @@ export const UserMenu: React.FC = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg
-          hover:bg-banana-100/60 hover:shadow-sm transition-all duration-200"
+          hover:bg-accent/60 hover:shadow-sm transition-all duration-200"
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-banana-400 to-orange-400
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-orange-400
           flex items-center justify-center text-white font-medium text-sm">
           {user.username.charAt(0).toUpperCase()}
         </div>
-        <span className="hidden md:block text-sm font-medium text-gray-700 max-w-[100px] truncate">
+        <span className="hidden md:block text-sm font-medium text-muted-foreground max-w-[100px] truncate">
           {user.username}
         </span>
         <ChevronDown
           size={16}
-          className={`text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* 下拉菜单 */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg
-          border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 top-full mt-2 w-64 bg-card rounded-xl shadow-lg
+          border border-border py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           {/* 用户信息 */}
-          <div className="px-4 py-3 border-b border-gray-100">
+          <div className="px-4 py-3 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-banana-400 to-orange-400
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-orange-400
                 flex items-center justify-center text-white font-semibold">
                 {user.username.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{user.username}</p>
+                <p className="text-sm font-medium text-foreground truncate">{user.username}</p>
                 {/* 会员等级徽章 */}
                 {membershipStatus && (
                   <span className={`inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded
@@ -174,7 +174,7 @@ export const UserMenu: React.FC = () => {
                   </span>
                 )}
                 {!membershipStatus && isAdmin() && (
-                  <span className="inline-flex items-center gap-1 text-xs text-banana-600 font-medium">
+                  <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
                     <Shield size={12} />
                     管理员
                   </span>
@@ -184,35 +184,35 @@ export const UserMenu: React.FC = () => {
             {/* 配额显示 */}
             {membershipStatus && !isAdmin() && (
               <div className="mt-3 flex gap-3 text-xs">
-                <div className="flex items-center gap-1 text-gray-500">
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <Image size={12} className="text-blue-500" />
-                  <span>图片: <strong className="text-gray-700">{membershipStatus.image_quota}</strong></span>
+                  <span>图片: <strong className="text-foreground">{membershipStatus.image_quota}</strong></span>
                 </div>
-                <div className="flex items-center gap-1 text-gray-500">
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <Zap size={12} className="text-purple-500" />
-                  <span>高级: <strong className="text-gray-700">{membershipStatus.premium_quota}</strong></span>
+                  <span>高级: <strong className="text-foreground">{membershipStatus.premium_quota}</strong></span>
                 </div>
               </div>
             )}
           </div>
 
           {/* 修改密码 */}
-          <div className="px-2 py-1 border-b border-gray-100">
+          <div className="px-2 py-1 border-b border-border">
             <button
               onClick={() => {
                 setIsOpen(false);
                 navigate('/membership');
               }}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
-                hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground
+                hover:bg-accent hover:text-primary rounded-lg transition-colors duration-150"
             >
               <Crown size={16} />
               会员中心
             </button>
             <button
               onClick={handleOpenPasswordModal}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
-                hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground
+                hover:bg-accent hover:text-primary rounded-lg transition-colors duration-150"
             >
               <Key size={16} />
               修改密码
@@ -221,14 +221,14 @@ export const UserMenu: React.FC = () => {
 
           {/* 管理员菜单 */}
           {isAdmin() && (
-            <div className="px-2 py-1 border-b border-gray-100">
+            <div className="px-2 py-1 border-b border-border">
               <button
                 onClick={() => {
                   setIsOpen(false);
                   navigate('/admin/users');
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
-                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground
+                  hover:bg-accent hover:text-primary rounded-lg transition-colors duration-150"
               >
                 <Users size={16} />
                 用户管理
@@ -238,8 +238,8 @@ export const UserMenu: React.FC = () => {
                   setIsOpen(false);
                   navigate('/admin/projects');
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
-                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground
+                  hover:bg-accent hover:text-primary rounded-lg transition-colors duration-150"
               >
                 <FolderOpen size={16} />
                 项目管理
@@ -249,8 +249,8 @@ export const UserMenu: React.FC = () => {
                   setIsOpen(false);
                   navigate('/admin/audit-logs');
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
-                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground
+                  hover:bg-accent hover:text-primary rounded-lg transition-colors duration-150"
               >
                 <FileText size={16} />
                 审计日志
@@ -262,7 +262,7 @@ export const UserMenu: React.FC = () => {
           <div className="px-2 py-2">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground
                 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors duration-150"
             >
               <LogOut size={16} />
@@ -302,7 +302,7 @@ export const UserMenu: React.FC = () => {
             onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
           />
           <div className="flex items-center">
-            <label className="flex items-center text-sm text-gray-600 cursor-pointer">
+            <label className="flex items-center text-sm text-muted-foreground cursor-pointer">
               <input
                 type="checkbox"
                 checked={showPasswords}
@@ -313,7 +313,7 @@ export const UserMenu: React.FC = () => {
               显示密码
             </label>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             密码要求：至少 8 个字符，必须包含字母和数字
           </p>
           <div className="flex justify-end gap-3 pt-2">

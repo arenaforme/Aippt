@@ -26,7 +26,7 @@ export const Landing = () => {
   }, [isAuthenticated, navigate]);
 
   return (
-    <div className="min-h-screen bg-white scroll-smooth">
+    <div className="min-h-screen bg-background scroll-smooth">
       <Navbar />
       <main>
         <Hero />

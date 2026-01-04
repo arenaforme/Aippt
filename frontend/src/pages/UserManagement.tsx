@@ -287,8 +287,8 @@ export const UserManagement: React.FC = () => {
       <ToastContainer />
       {ConfirmDialog}
 
-      {/* 顶栏 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3">
+      {/* 顶栏 - 毛玻璃效果 */}
+      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-border/50 sticky top-0 z-10 px-4 md:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate('/')}>
@@ -296,7 +296,7 @@ export const UserManagement: React.FC = () => {
             </Button>
             <div className="flex items-center gap-2">
               <Shield size={24} className="text-banana-600" />
-              <h1 className="text-xl font-bold text-gray-900">用户管理</h1>
+              <h1 className="text-xl font-bold text-foreground">用户管理</h1>
             </div>
           </div>
           <UserMenu />
@@ -305,24 +305,24 @@ export const UserManagement: React.FC = () => {
 
       {/* 主内容 */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-        <Card className="p-6">
+        <Card className="p-6 bg-white/80 backdrop-blur-sm">
           {/* 工具栏 */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="搜索用户名..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500"
+                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500 bg-background"
               />
             </div>
             <div className="flex gap-2">
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500"
+                className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500 bg-background"
               >
                 <option value="">全部角色</option>
                 <option value="admin">管理员</option>
@@ -331,7 +331,7 @@ export const UserManagement: React.FC = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500"
+                className="px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500 bg-background"
               >
                 <option value="">全部状态</option>
                 <option value="active">活跃</option>
@@ -351,16 +351,16 @@ export const UserManagement: React.FC = () => {
 
           {/* 用户统计和系统设置 */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-muted-foreground">
               共 {total} 个用户，显示 {filteredUsers.length} 个
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">允许用户注册</span>
+              <span className="text-sm text-muted-foreground">允许用户注册</span>
               <button
                 onClick={handleToggleRegistration}
                 disabled={isTogglingRegistration}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  allowRegistration ? 'bg-banana-500' : 'bg-gray-300'
+                  allowRegistration ? 'bg-banana-500' : 'bg-muted'
                 } ${isTogglingRegistration ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               >
                 <span
@@ -369,7 +369,7 @@ export const UserManagement: React.FC = () => {
                   }`}
                 />
               </button>
-              <span className={`text-xs ${allowRegistration ? 'text-green-600' : 'text-gray-500'}`}>
+              <span className={`text-xs ${allowRegistration ? 'text-green-600' : 'text-muted-foreground'}`}>
                 {allowRegistration ? '已开启' : '已关闭'}
               </span>
             </div>
@@ -456,19 +456,19 @@ const UserTable: React.FC<{
   <div className="overflow-x-auto">
     <table className="w-full">
       <thead>
-        <tr className="border-b border-gray-200">
-          <th className="text-left py-3 px-4 font-medium text-gray-700">用户名</th>
-          <th className="text-left py-3 px-4 font-medium text-gray-700">角色</th>
-          <th className="text-left py-3 px-4 font-medium text-gray-700">会员等级</th>
-          <th className="text-left py-3 px-4 font-medium text-gray-700">配额</th>
-          <th className="text-left py-3 px-4 font-medium text-gray-700">状态</th>
-          <th className="text-left py-3 px-4 font-medium text-gray-700">创建时间</th>
-          <th className="text-right py-3 px-4 font-medium text-gray-700">操作</th>
+        <tr className="border-b border-border">
+          <th className="text-left py-3 px-4 font-medium text-muted-foreground">用户名</th>
+          <th className="text-left py-3 px-4 font-medium text-muted-foreground">角色</th>
+          <th className="text-left py-3 px-4 font-medium text-muted-foreground">会员等级</th>
+          <th className="text-left py-3 px-4 font-medium text-muted-foreground">配额</th>
+          <th className="text-left py-3 px-4 font-medium text-muted-foreground">状态</th>
+          <th className="text-left py-3 px-4 font-medium text-muted-foreground">创建时间</th>
+          <th className="text-right py-3 px-4 font-medium text-muted-foreground">操作</th>
         </tr>
       </thead>
       <tbody>
         {users.map((u) => (
-          <tr key={u.id} className="border-b border-gray-100 hover:bg-gray-50">
+          <tr key={u.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
             <td className="py-3 px-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-banana-400 to-orange-400 flex items-center justify-center text-white font-medium text-sm">
@@ -483,7 +483,7 @@ const UserTable: React.FC<{
                 value={u.role}
                 onChange={(e) => onUpdateRole(u.id, e.target.value)}
                 disabled={u.id === currentUserId}
-                className="px-2 py-1 text-sm border border-gray-200 rounded disabled:opacity-50"
+                className="px-2 py-1 text-sm border border-border rounded disabled:opacity-50 bg-background"
               >
                 <option value="user">普通用户</option>
                 <option value="admin">管理员</option>
@@ -515,28 +515,28 @@ const UserTable: React.FC<{
                 <option value="disabled">禁用</option>
               </select>
             </td>
-            <td className="py-3 px-4 text-sm text-gray-500">
+            <td className="py-3 px-4 text-sm text-muted-foreground">
               {new Date(u.created_at).toLocaleDateString('zh-CN')}
             </td>
             <td className="py-3 px-4 text-right">
               <div className="flex items-center justify-end gap-1">
                 <button
                   onClick={() => onSetMembership(u.id, u.username, u)}
-                  className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded"
+                  className="p-2 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
                   title="设置会员"
                 >
                   <Crown size={16} />
                 </button>
                 <button
                   onClick={() => onSetQuota(u.id, u.username, u)}
-                  className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                   title="调整配额"
                 >
                   <Zap size={16} />
                 </button>
                 <button
                   onClick={() => onResetPassword(u.id, u.username)}
-                  className="p-2 text-gray-500 hover:text-banana-600 hover:bg-banana-50 rounded"
+                  className="p-2 text-muted-foreground hover:text-banana-600 hover:bg-banana-50 rounded transition-colors"
                   title="重置密码"
                 >
                   <Key size={16} />
@@ -544,7 +544,7 @@ const UserTable: React.FC<{
                 <button
                   onClick={() => onDelete(u.id, u.username)}
                   disabled={u.id === currentUserId}
-                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-30"
+                  className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-30 transition-colors"
                   title="删除用户"
                 >
                   <Trash2 size={16} />
@@ -556,7 +556,7 @@ const UserTable: React.FC<{
       </tbody>
     </table>
     {users.length === 0 && (
-      <div className="text-center py-8 text-gray-500">暂无用户数据</div>
+      <div className="text-center py-8 text-muted-foreground">暂无用户数据</div>
     )}
   </div>
 );
@@ -579,11 +579,11 @@ const CreateUserModal: React.FC<{
       <Input label="用户名" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="请输入用户名" />
       <div>
         <Input label="密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入密码" />
-        <p className="mt-1 text-xs text-gray-500">密码至少8位，必须包含字母和数字</p>
+        <p className="mt-1 text-xs text-muted-foreground">密码至少8位，必须包含字母和数字</p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">角色</label>
-        <select value={role} onChange={(e) => setRole(e.target.value as 'user' | 'admin')} className="w-full px-3 py-2 border border-gray-200 rounded-lg">
+        <label className="block text-sm font-medium text-foreground mb-2">角色</label>
+        <select value={role} onChange={(e) => setRole(e.target.value as 'user' | 'admin')} className="w-full px-3 py-2 border border-border rounded-lg bg-background">
           <option value="user">普通用户</option>
           <option value="admin">管理员</option>
         </select>
@@ -610,7 +610,7 @@ const ResetPasswordModal: React.FC<{
     <div className="space-y-4">
       <div>
         <Input label="新密码" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="请输入新密码" />
-        <p className="mt-1 text-xs text-gray-500">密码至少8位，必须包含字母和数字</p>
+        <p className="mt-1 text-xs text-muted-foreground">密码至少8位，必须包含字母和数字</p>
       </div>
       <div className="flex justify-end gap-3 pt-4">
         <Button variant="ghost" onClick={onClose}>取消</Button>
@@ -622,7 +622,7 @@ const ResetPasswordModal: React.FC<{
 
 // 会员等级徽章组件
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  free: { label: '免费', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  free: { label: '免费', color: 'text-muted-foreground', bgColor: 'bg-muted' },
   basic: { label: '基础', color: 'text-blue-600', bgColor: 'bg-blue-100' },
   premium: { label: '高级', color: 'text-purple-600', bgColor: 'bg-purple-100' },
 };
@@ -639,7 +639,7 @@ const MembershipLevelBadge: React.FC<{ level?: string; expiresAt?: string }> = (
         {isExpired && <span className="text-red-500">(已过期)</span>}
       </span>
       {expiresAt && !isExpired && (
-        <span className="text-[10px] text-gray-400">
+        <span className="text-[10px] text-muted-foreground">
           {new Date(expiresAt).toLocaleDateString('zh-CN')}到期
         </span>
       )}
@@ -661,11 +661,11 @@ const SetMembershipModal: React.FC<{
   <Modal isOpen={isOpen} onClose={onClose} title={`设置会员 - ${username}`}>
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">选择套餐</label>
+        <label className="block text-sm font-medium text-foreground mb-2">选择套餐</label>
         <select
           value={form.plan_id}
           onChange={(e) => setForm({ ...form, plan_id: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background"
         >
           <option value="">请选择套餐</option>
           {plans.map((plan) => (
@@ -681,7 +681,7 @@ const SetMembershipModal: React.FC<{
         value={form.expires_at}
         onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
       />
-      <p className="text-xs text-gray-500">留空则根据套餐时长自动计算过期时间</p>
+      <p className="text-xs text-muted-foreground">留空则根据套餐时长自动计算过期时间</p>
       <div className="flex justify-end gap-3 pt-4">
         <Button variant="ghost" onClick={onClose}>取消</Button>
         <Button variant="primary" onClick={onSave} loading={isSaving}>保存</Button>
@@ -703,7 +703,7 @@ const SetQuotaModal: React.FC<{
   <Modal isOpen={isOpen} onClose={onClose} title={`调整配额 - ${username}`}>
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           <span className="flex items-center gap-1"><Image size={14} className="text-blue-500" /> 图片生成配额</span>
         </label>
         <input
@@ -711,11 +711,11 @@ const SetQuotaModal: React.FC<{
           min="0"
           value={form.image_quota}
           onChange={(e) => setForm({ ...form, image_quota: parseInt(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           <span className="flex items-center gap-1"><Zap size={14} className="text-purple-500" /> 高级功能配额</span>
         </label>
         <input
@@ -723,7 +723,7 @@ const SetQuotaModal: React.FC<{
           min="0"
           value={form.premium_quota}
           onChange={(e) => setForm({ ...form, premium_quota: parseInt(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background"
         />
       </div>
       <div className="flex justify-end gap-3 pt-4">

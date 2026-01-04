@@ -227,15 +227,16 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
             # Get all pages for this project
             pages = Page.query.filter_by(project_id=project_id).order_by(Page.order_index).all()
             pages_data = ai_service.flatten_outline(outline)
-            
+
             # Get template path if use_template
             ref_image_path = None
             if use_template:
                 ref_image_path = file_service.get_template_path(project_id)
-            
+                logger.info(f"📋 Using template for batch generation: {ref_image_path}")
+
             if not ref_image_path:
                 raise ValueError("No template image found for project")
-            
+
             # Initialize progress
             task.set_progress({
                 "total": len(pages),
@@ -447,15 +448,16 @@ def generate_single_page_image_task(task_id: str, project_id: str, page_id: str,
                     logger.info(f"Found {len(image_urls)} image(s) in page {page_id} description")
                     additional_ref_images = image_urls
                     has_material_images = True
-            
+
             # Get template path if use_template
             ref_image_path = None
             if use_template:
                 ref_image_path = file_service.get_template_path(project_id)
-            
+                logger.info(f"📋 Using template for single page: {ref_image_path}")
+
             if not ref_image_path:
                 raise ValueError("No template image found for project")
-            
+
             # Generate image prompt
             page_data = page.get_outline_content() or {}
             if page.part:

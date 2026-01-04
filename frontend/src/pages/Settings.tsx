@@ -1,7 +1,16 @@
+/**
+ * 系统设置页面
+ * 设计规范：AppShell 布局 + 毛玻璃卡片 + Spring 动画
+ */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Home, Key, Image, Zap, Save, RotateCcw, Globe, FileText } from 'lucide-react';
-import { Button, Input, Card, Loading, useToast, useConfirm, UserMenu } from '@/components/shared';
+import { cn } from '@/lib/utils';
+import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Button, Input, Card, Loading, useToast, useConfirm } from '@/components/shared';
+import { fadeInUp, staggerContainer } from '@/lib/animations';
 import * as api from '@/api/endpoints';
 import type { OutputLanguage } from '@/api/endpoints';
 import { OUTPUT_LANGUAGE_OPTIONS } from '@/api/endpoints';
@@ -318,7 +327,7 @@ export const Settings: React.FC = () => {
     if (field.type === 'buttons' && field.options) {
       return (
         <div key={field.key}>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             {field.label}
           </label>
           <div className="flex flex-wrap gap-2">
@@ -332,7 +341,7 @@ export const Settings: React.FC = () => {
                     ? option.value === 'openai'
                       ? 'bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md'
                       : 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-md'
-                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                    : 'bg-card border border-border text-muted-foreground hover:bg-muted hover:border-muted-foreground'
                 }`}
               >
                 {option.label}
@@ -340,7 +349,7 @@ export const Settings: React.FC = () => {
             ))}
           </div>
           {field.description && (
-            <p className="mt-1 text-xs text-gray-500">{field.description}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{field.description}</p>
           )}
         </div>
       );
@@ -349,13 +358,13 @@ export const Settings: React.FC = () => {
     if (field.type === 'select' && field.options) {
       return (
         <div key={field.key}>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">
             {field.label}
           </label>
           <select
             value={value as string}
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            className="w-full h-10 px-4 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-banana-500 focus:border-transparent"
+            className="w-full h-10 px-4 rounded-lg border border-border bg-card focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           >
             {field.options.map((option) => (
               <option key={option.value} value={option.value}>
@@ -364,7 +373,7 @@ export const Settings: React.FC = () => {
             ))}
           </select>
           {field.description && (
-            <p className="mt-1 text-sm text-gray-500">{field.description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{field.description}</p>
           )}
         </div>
       );
@@ -392,7 +401,7 @@ export const Settings: React.FC = () => {
           max={field.max}
         />
         {field.description && (
-          <p className="mt-1 text-sm text-gray-500">{field.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{field.description}</p>
         )}
       </div>
     );
@@ -400,78 +409,102 @@ export const Settings: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50 flex items-center justify-center">
-        <Loading text="加载设置中..." />
-      </div>
+      <AppShell showSidebar={true}>
+        <div className="flex items-center justify-center py-12">
+          <Loading text="加载设置中..." />
+        </div>
+      </AppShell>
     );
   }
 
+  const topbarRightContent = (
+    <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate('/')}>
+      <Home className="h-4 w-4" />
+      <span className="hidden sm:inline">主页</span>
+    </Button>
+  );
+
+  const pageActions = (
+    <div className="flex items-center gap-3">
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-2"
+        onClick={handleReset}
+        disabled={isSaving}
+      >
+        <RotateCcw className="h-4 w-4" />
+        重置默认
+      </Button>
+      <Button
+        size="sm"
+        className="gap-2"
+        onClick={handleSave}
+        disabled={isSaving}
+      >
+        {isSaving ? (
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
+            <Save className="h-4 w-4" />
+          </motion.div>
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
+        {isSaving ? '保存中...' : '保存设置'}
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50">
+    <AppShell showSidebar={true} topbarRightContent={topbarRightContent}>
+      <motion.div
+        className="max-w-4xl mx-auto px-4 py-8"
+        variants={fadeInUp}
+        initial="initial"
+        animate="animate"
+      >
+        <PageHeader
+          title="系统设置"
+          description="配置应用的各项参数"
+          actions={pageActions}
+        />
+
+        <motion.div
+          className="space-y-6"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          {settingsSections.map((section, index) => (
+            <motion.div
+              key={section.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05, type: 'spring', stiffness: 300, damping: 25 }}
+            >
+              <Card className={cn(
+                'p-6 bg-card/80 backdrop-blur-sm',
+                'border border-border/50',
+                'rounded-xl'
+              )}>
+                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center">
+                  <span className={cn(
+                    'w-9 h-9 rounded-lg flex items-center justify-center mr-3',
+                    'bg-primary/10 text-primary'
+                  )}>
+                    {section.icon}
+                  </span>
+                  {section.title}
+                </h2>
+                <div className="space-y-4 pl-12">
+                  {section.fields.map((field) => renderField(field))}
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.div>
       <ToastContainer />
       {ConfirmDialog}
-
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card className="p-6 md:p-8">
-          <div className="space-y-8">
-            {/* 顶部标题 */}
-            <div className="flex items-center justify-between pb-6 border-b border-gray-200">
-              <div className="flex items-center">
-                <Button
-                  variant="secondary"
-                  icon={<Home size={18} />}
-                  onClick={() => navigate('/')}
-                  className="mr-4"
-                >
-                  返回首页
-                </Button>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">系统设置</h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    配置应用的各项参数
-                  </p>
-                </div>
-              </div>
-              <UserMenu />
-            </div>
-
-            {/* 配置区块（配置驱动） */}
-            <div className="space-y-8">
-              {settingsSections.map((section) => (
-                <div key={section.title}>
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                    {section.icon}
-                    <span className="ml-2">{section.title}</span>
-                  </h2>
-                  <div className="space-y-4">
-                    {section.fields.map((field) => renderField(field))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* 操作按钮 */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-              <Button
-                variant="secondary"
-                icon={<RotateCcw size={18} />}
-                onClick={handleReset}
-                disabled={isSaving}
-              >
-                重置为默认配置
-              </Button>
-              <Button
-                variant="primary"
-                icon={<Save size={18} />}
-                onClick={handleSave}
-                loading={isSaving}
-              >
-                {isSaving ? '保存中...' : '保存设置'}
-              </Button>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
+    </AppShell>
   );
 };

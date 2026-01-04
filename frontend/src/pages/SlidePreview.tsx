@@ -1,6 +1,7 @@
 // TODO: split components
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Home,
   ArrowLeft,
@@ -18,6 +19,8 @@ import {
   Crown,
   Lock,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { fadeInUp, staggerContainer, staggerItem, fadeInScale } from '@/lib/animations';
 import { Button, Loading, Modal, Textarea, useToast, useConfirm, MaterialSelector, Markdown, UserMenu, ExportProgressModal } from '@/components/shared';
 import { MaterialGeneratorModal } from '@/components/shared/MaterialGeneratorModal';
 import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
@@ -683,9 +686,14 @@ export const SlidePreview: React.FC = () => {
   );
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
-      {/* 顶栏 */}
-      <header className="h-14 md:h-16 bg-white shadow-sm border-b border-gray-200 flex items-center justify-between px-3 md:px-6 flex-shrink-0">
+    <div className="h-screen bg-gradient-to-br from-background via-muted/30 to-background flex flex-col overflow-hidden">
+      {/* 顶栏 - 毛玻璃效果 */}
+      <motion.header
+        className="h-14 md:h-16 bg-background/80 backdrop-blur-md shadow-sm border-b border-border/50 flex items-center justify-between px-3 md:px-6 flex-shrink-0 sticky top-0 z-10"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+      >
         <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
           <Button
             variant="ghost"
@@ -715,7 +723,7 @@ export const SlidePreview: React.FC = () => {
             <span className="text-xl md:text-2xl">🍌</span>
             <span className="text-base md:text-xl font-bold truncate">AI演示眼</span>
           </div>
-          <span className="text-gray-400 hidden md:inline">|</span>
+          <span className="text-muted-foreground hidden md:inline">|</span>
           <span className="text-sm md:text-lg font-semibold truncate hidden sm:inline">预览</span>
         </div>
         <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
@@ -769,16 +777,16 @@ export const SlidePreview: React.FC = () => {
               <span className="sm:hidden">导出</span>
             </Button>
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
+              <div className="absolute right-0 mt-2 w-52 bg-card rounded-lg shadow-lg border border py-2 z-10">
                 <button
                   onClick={() => handleExport('pptx')}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                  className="w-full px-4 py-2 text-left hover:bg-background transition-colors text-sm"
                 >
                   导出为 PPTX
                 </button>
                 <button
                   onClick={() => handleExport('editable-pptx')}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm flex items-center justify-between"
+                  className="w-full px-4 py-2 text-left hover:bg-background transition-colors text-sm flex items-center justify-between"
                 >
                   <span>导出可编辑 PPTX</span>
                   <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
@@ -790,7 +798,7 @@ export const SlidePreview: React.FC = () => {
                   <a
                     href={lastEditablePPTXUrl}
                     download
-                    className="block w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-green-600"
+                    className="block w-full px-4 py-2 text-left hover:bg-background transition-colors text-sm text-green-600"
                     onClick={() => setShowExportMenu(false)}
                   >
                     ⬇ 下载可编辑 PPTX
@@ -798,7 +806,7 @@ export const SlidePreview: React.FC = () => {
                 )}
                 <button
                   onClick={() => handleExport('pdf')}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                  className="w-full px-4 py-2 text-left hover:bg-background transition-colors text-sm"
                 >
                   导出为 PDF
                 </button>
@@ -807,13 +815,18 @@ export const SlidePreview: React.FC = () => {
           </div>
           <UserMenu />
         </div>
-      </header>
+      </motion.header>
 
       {/* 主内容区 */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-w-0 min-h-0">
         {/* 左侧：缩略图列表 */}
-        <aside className="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex flex-col flex-shrink-0">
-          <div className="p-3 md:p-4 border-b border-gray-200 flex-shrink-0 space-y-2 md:space-y-3">
+        <motion.aside
+          className="w-full md:w-80 bg-card border-b md:border-b-0 md:border-r border flex flex-col flex-shrink-0"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
+        >
+          <div className="p-3 md:p-4 border-b border flex-shrink-0 space-y-2 md:space-y-3">
             <Button
               variant="primary"
               icon={<Sparkles size={16} className="md:w-[18px] md:h-[18px]" />}
@@ -824,10 +837,10 @@ export const SlidePreview: React.FC = () => {
             </Button>
             
             {/* 额外要求 */}
-            <div className="border-t border-gray-200 pt-2 md:pt-3">
+            <div className="border-t border pt-2 md:pt-3">
               <button
                 onClick={() => setIsExtraRequirementsExpanded(!isExtraRequirementsExpanded)}
-                className="w-full flex items-center justify-between text-xs md:text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                className="w-full flex items-center justify-between text-xs md:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <span>额外要求</span>
                 {isExtraRequirementsExpanded ? (
@@ -874,8 +887,8 @@ export const SlidePreview: React.FC = () => {
                     onClick={() => setSelectedIndex(index)}
                     className={`md:hidden w-20 h-14 rounded border-2 transition-all ${
                       selectedIndex === index
-                        ? 'border-banana-500 shadow-md'
-                        : 'border-gray-200'
+                        ? 'border-primary shadow-md'
+                        : 'border'
                     }`}
                   >
                     {page.generated_image_path ? (
@@ -885,7 +898,7 @@ export const SlidePreview: React.FC = () => {
                         className="w-full h-full object-cover rounded"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">
+                      <div className="w-full h-full bg-muted rounded flex items-center justify-center text-xs text-muted-foreground">
                         {index + 1}
                       </div>
                     )}
@@ -909,18 +922,23 @@ export const SlidePreview: React.FC = () => {
               ))}
             </div>
           </div>
-        </aside>
+        </motion.aside>
 
         {/* 右侧：大图预览 */}
-        <main className="flex-1 flex flex-col bg-gradient-to-br from-banana-50 via-white to-gray-50 min-w-0 overflow-hidden">
+        <motion.main
+          className="flex-1 flex flex-col bg-gradient-to-br from-banana-50 via-white to-muted/30 min-w-0 overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
           {currentProject.pages.length === 0 ? (
             <div className="flex-1 flex items-center justify-center overflow-y-auto">
               <div className="text-center">
                 <div className="text-4xl md:text-6xl mb-4">📊</div>
-                <h3 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">
+                <h3 className="text-lg md:text-xl font-semibold text-muted-foreground mb-2">
                   还没有页面
                 </h3>
-                <p className="text-sm md:text-base text-gray-500 mb-6">
+                <p className="text-sm md:text-base text-muted-foreground mb-6">
                   请先返回编辑页面添加内容
                 </p>
                 <Button
@@ -936,8 +954,21 @@ export const SlidePreview: React.FC = () => {
             <>
               {/* 预览区 */}
               <div className="flex-1 overflow-y-auto min-h-0 flex items-center justify-center p-4 md:p-8">
-                <div className="max-w-5xl w-full">
-                  <div className="relative aspect-video bg-white rounded-lg shadow-xl overflow-hidden touch-manipulation">
+                <motion.div
+                  className="max-w-5xl w-full"
+                  variants={fadeInScale}
+                  initial="initial"
+                  animate="animate"
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={selectedIndex}
+                      className="relative aspect-video bg-card rounded-lg shadow-xl overflow-hidden touch-manipulation"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                    >
                     {selectedPage?.generated_image_path ? (
                       <img
                         src={imageUrl}
@@ -946,10 +977,10 @@ export const SlidePreview: React.FC = () => {
                         draggable={false}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
                         <div className="text-center">
                           <div className="text-6xl mb-4">🍌</div>
-                          <p className="text-gray-500 mb-4">
+                          <p className="text-muted-foreground mb-4">
                             {selectedPage?.id && pageGeneratingTasks[selectedPage.id]
                               ? '正在生成中...'
                               : selectedPage?.status === 'GENERATING'
@@ -968,12 +999,18 @@ export const SlidePreview: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
+                    </motion.div>
+                  </AnimatePresence>
+                </motion.div>
               </div>
 
               {/* 控制栏 */}
-              <div className="bg-white border-t border-gray-200 px-3 md:px-6 py-3 md:py-4 flex-shrink-0">
+              <motion.div
+                className="bg-card border-t border px-3 md:px-6 py-3 md:py-4 flex-shrink-0"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.3 }}
+              >
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 max-w-5xl mx-auto">
                   {/* 导航 */}
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-center">
@@ -988,7 +1025,7 @@ export const SlidePreview: React.FC = () => {
                       <span className="hidden sm:inline">上一页</span>
                       <span className="sm:hidden">上一页</span>
                     </Button>
-                    <span className="px-2 md:px-4 text-xs md:text-sm text-gray-600 whitespace-nowrap">
+                    <span className="px-2 md:px-4 text-xs md:text-sm text-muted-foreground whitespace-nowrap">
                       {selectedIndex + 1} / {currentProject.pages.length}
                     </span>
                     <Button
@@ -1050,13 +1087,13 @@ export const SlidePreview: React.FC = () => {
                           <span className="md:hidden">版本</span>
                         </Button>
                         {showVersionMenu && (
-                          <div className="absolute right-0 bottom-full mb-2 w-56 md:w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20 max-h-96 overflow-y-auto">
+                          <div className="absolute right-0 bottom-full mb-2 w-56 md:w-64 bg-card rounded-lg shadow-lg border border py-2 z-20 max-h-96 overflow-y-auto">
                             {imageVersions.map((version) => (
                               <button
                                 key={version.version_id}
                                 onClick={() => handleSwitchVersion(version.version_id)}
-                                className={`w-full px-3 md:px-4 py-2 text-left hover:bg-gray-50 transition-colors flex items-center justify-between text-xs md:text-sm ${
-                                  version.is_current ? 'bg-banana-50' : ''
+                                className={`w-full px-3 md:px-4 py-2 text-left hover:bg-background transition-colors flex items-center justify-between text-xs md:text-sm ${
+                                  version.is_current ? 'bg-accent' : ''
                                 }`}
                               >
                                 <div className="flex items-center gap-2">
@@ -1064,12 +1101,12 @@ export const SlidePreview: React.FC = () => {
                                     版本 {version.version_number}
                                   </span>
                                   {version.is_current && (
-                                    <span className="text-xs text-banana-600 font-medium">
+                                    <span className="text-xs text-primary font-medium">
                                       (当前)
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-xs text-gray-400 hidden md:inline">
+                                <span className="text-xs text-muted-foreground hidden md:inline">
                                   {version.created_at
                                     ? new Date(version.created_at).toLocaleString('zh-CN', {
                                         month: 'short',
@@ -1107,10 +1144,10 @@ export const SlidePreview: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </>
           )}
-        </main>
+        </motion.main>
       </div>
 
       {/* 编辑对话框 */}
@@ -1123,7 +1160,7 @@ export const SlidePreview: React.FC = () => {
         <div className="space-y-4">
           {/* 图片（支持矩形区域选择） */}
           <div
-            className="aspect-video bg-gray-100 rounded-lg overflow-hidden relative"
+            className="aspect-video bg-muted rounded-lg overflow-hidden relative"
             onMouseDown={handleSelectionMouseDown}
             onMouseMove={handleSelectionMouseMove}
             onMouseUp={handleSelectionMouseUp}
@@ -1143,7 +1180,7 @@ export const SlidePreview: React.FC = () => {
                     setSelectionRect(null);
                     setIsSelectingRegion(false);
                   }}
-                  className="absolute top-2 left-2 z-10 px-2 py-1 rounded bg-white/80 text-[10px] text-gray-700 hover:bg-banana-50 shadow-sm flex items-center gap-1"
+                  className="absolute top-2 left-2 z-10 px-2 py-1 rounded bg-card/80 text-[10px] text-muted-foreground hover:bg-accent shadow-sm flex items-center gap-1"
                 >
                   <Sparkles size={12} />
                   <span>{isRegionSelectionMode ? '结束区域选图' : '区域选图'}</span>
@@ -1159,7 +1196,7 @@ export const SlidePreview: React.FC = () => {
                 />
                 {selectionRect && (
                   <div
-                    className="absolute border-2 border-banana-500 bg-banana-400/10 pointer-events-none"
+                    className="absolute border-2 border-primary bg-primary/10 pointer-events-none"
                     style={{
                       left: selectionRect.left,
                       top: selectionRect.top,
@@ -1174,25 +1211,25 @@ export const SlidePreview: React.FC = () => {
 
           {/* 大纲内容 - 可折叠 */}
           {selectedPage?.outline_content && (
-            <div className="bg-gray-50 rounded-lg border border-gray-200">
+            <div className="bg-background rounded-lg border border">
               <button
                 onClick={() => setIsOutlineExpanded(!isOutlineExpanded)}
-                className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors"
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted transition-colors"
               >
-                <h4 className="text-sm font-semibold text-gray-700">页面大纲</h4>
+                <h4 className="text-sm font-semibold text-muted-foreground">页面大纲</h4>
                 {isOutlineExpanded ? (
-                  <ChevronUp size={18} className="text-gray-500" />
+                  <ChevronUp size={18} className="text-muted-foreground" />
                 ) : (
-                  <ChevronDown size={18} className="text-gray-500" />
+                  <ChevronDown size={18} className="text-muted-foreground" />
                 )}
               </button>
               {isOutlineExpanded && (
                 <div className="px-4 pb-4 space-y-2">
-                  <div className="text-sm font-medium text-gray-900 mb-2">
+                  <div className="text-sm font-medium text-foreground mb-2">
                     {selectedPage.outline_content.title}
                   </div>
                   {selectedPage.outline_content.points && selectedPage.outline_content.points.length > 0 && (
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       <Markdown>{selectedPage.outline_content.points.join('\n')}</Markdown>
                     </div>
                   )}
@@ -1208,16 +1245,16 @@ export const SlidePreview: React.FC = () => {
                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
                 className="w-full px-4 py-3 flex items-center justify-between hover:bg-blue-100 transition-colors"
               >
-                <h4 className="text-sm font-semibold text-gray-700">页面描述</h4>
+                <h4 className="text-sm font-semibold text-muted-foreground">页面描述</h4>
                 {isDescriptionExpanded ? (
-                  <ChevronUp size={18} className="text-gray-500" />
+                  <ChevronUp size={18} className="text-muted-foreground" />
                 ) : (
-                  <ChevronDown size={18} className="text-gray-500" />
+                  <ChevronDown size={18} className="text-muted-foreground" />
                 )}
               </button>
               {isDescriptionExpanded && (
                 <div className="px-4 pb-4">
-                  <div className="text-sm text-gray-700 max-h-48 overflow-y-auto">
+                  <div className="text-sm text-muted-foreground max-h-48 overflow-y-auto">
                     <Markdown>
                       {(() => {
                         const desc = selectedPage.description_content;
@@ -1238,8 +1275,8 @@ export const SlidePreview: React.FC = () => {
           )}
 
           {/* 上下文图片选择 */}
-          <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-4">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">选择上下文图片（可选）</h4>
+          <div className="bg-background rounded-lg border border p-4 space-y-4">
+            <h4 className="text-sm font-semibold text-muted-foreground mb-3">选择上下文图片（可选）</h4>
             
             {/* Template图片选择 */}
             {currentProject?.template_image_path && (
@@ -1254,16 +1291,16 @@ export const SlidePreview: React.FC = () => {
                       useTemplate: e.target.checked,
                     }))
                   }
-                  className="w-4 h-4 text-banana-600 rounded focus:ring-banana-500"
+                  className="w-4 h-4 text-primary rounded focus:ring-primary"
                 />
                 <label htmlFor="use-template" className="flex items-center gap-2 cursor-pointer">
-                  <ImageIcon size={16} className="text-gray-500" />
-                  <span className="text-sm text-gray-700">使用模板图片</span>
+                  <ImageIcon size={16} className="text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">使用模板图片</span>
                   {currentProject.template_image_path && (
                     <img
                       src={getImageUrl(currentProject.template_image_path, currentProject.updated_at)}
                       alt="Template"
-                      className="w-16 h-10 object-cover rounded border border-gray-300"
+                      className="w-16 h-10 object-cover rounded border border-border"
                     />
                   )}
                 </label>
@@ -1275,19 +1312,18 @@ export const SlidePreview: React.FC = () => {
               const descImageUrls = extractImageUrlsFromDescription(selectedPage.description_content);
               return descImageUrls.length > 0 ? (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">描述中的图片：</label>
+                  <label className="text-sm font-medium text-muted-foreground">描述中的图片：</label>
                   <div className="grid grid-cols-3 gap-2">
                     {descImageUrls.map((url, idx) => (
                       <div key={idx} className="relative group">
                         <img
                           src={url}
                           alt={`Desc image ${idx + 1}`}
-                          className="w-full h-20 object-cover rounded border-2 border-gray-300 cursor-pointer transition-all"
-                          style={{
-                            borderColor: selectedContextImages.descImageUrls.includes(url)
-                              ? '#f59e0b'
-                              : '#d1d5db',
-                          }}
+                          className={`w-full h-20 object-cover rounded border-2 cursor-pointer transition-all ${
+                            selectedContextImages.descImageUrls.includes(url)
+                              ? 'border-primary'
+                              : 'border-border'
+                          }`}
                           onClick={() => {
                             setSelectedContextImages((prev) => {
                               const isSelected = prev.descImageUrls.includes(url);
@@ -1301,8 +1337,8 @@ export const SlidePreview: React.FC = () => {
                           }}
                         />
                         {selectedContextImages.descImageUrls.includes(url) && (
-                          <div className="absolute inset-0 bg-banana-500/20 border-2 border-banana-500 rounded flex items-center justify-center">
-                            <div className="w-6 h-6 bg-banana-500 rounded-full flex items-center justify-center">
+                          <div className="absolute inset-0 bg-accent0/20 border-2 border-primary rounded flex items-center justify-center">
+                            <div className="w-6 h-6 bg-accent0 rounded-full flex items-center justify-center">
                               <span className="text-white text-xs font-bold">✓</span>
                             </div>
                           </div>
@@ -1317,7 +1353,7 @@ export const SlidePreview: React.FC = () => {
             {/* 上传图片 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">上传图片：</label>
+                <label className="text-sm font-medium text-muted-foreground">上传图片：</label>
                 {projectId && (
                   <Button
                     variant="ghost"
@@ -1335,7 +1371,7 @@ export const SlidePreview: React.FC = () => {
                     <img
                       src={URL.createObjectURL(file)}
                       alt={`Uploaded ${idx + 1}`}
-                      className="w-20 h-20 object-cover rounded border border-gray-300"
+                      className="w-20 h-20 object-cover rounded border border-border"
                     />
                     <button
                       onClick={() => removeUploadedFile(idx)}
@@ -1345,9 +1381,9 @@ export const SlidePreview: React.FC = () => {
                     </button>
                   </div>
                 ))}
-                <label className="w-20 h-20 border-2 border-dashed border-gray-300 rounded flex flex-col items-center justify-center cursor-pointer hover:border-banana-500 transition-colors">
-                  <Upload size={20} className="text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-500">上传</span>
+                <label className="w-20 h-20 border-2 border-dashed border-border rounded flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors">
+                  <Upload size={20} className="text-muted-foreground mb-1" />
+                  <span className="text-xs text-muted-foreground">上传</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -1393,7 +1429,7 @@ export const SlidePreview: React.FC = () => {
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             选择一个新的模板将应用到后续PPT页面生成（不影响已经生成的页面）。你可以选择预设模板、已有模板或上传新模板。
           </p>
           <TemplateSelector
@@ -1404,7 +1440,7 @@ export const SlidePreview: React.FC = () => {
             projectId={projectId || null}
           />
           {isUploadingTemplate && (
-            <div className="text-center py-2 text-sm text-gray-500">
+            <div className="text-center py-2 text-sm text-muted-foreground">
               正在上传模板...
             </div>
           )}

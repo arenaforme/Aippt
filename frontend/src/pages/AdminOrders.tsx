@@ -24,11 +24,11 @@ import type { AdminOrder } from '@/api/membership';
 
 // 订单状态配置
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: '待支付', color: 'text-yellow-600 bg-yellow-50', icon: <Clock size={14} /> },
-  paid: { label: '已支付', color: 'text-green-600 bg-green-50', icon: <CheckCircle size={14} /> },
-  cancelled: { label: '已取消', color: 'text-gray-600 bg-gray-50', icon: <XCircle size={14} /> },
-  expired: { label: '已过期', color: 'text-gray-600 bg-gray-50', icon: <AlertCircle size={14} /> },
-  refunded: { label: '已退款', color: 'text-blue-600 bg-blue-50', icon: <AlertCircle size={14} /> },
+  pending: { label: '待支付', color: 'text-yellow-600 bg-yellow-500/10', icon: <Clock size={14} /> },
+  paid: { label: '已支付', color: 'text-green-600 bg-green-500/10', icon: <CheckCircle size={14} /> },
+  cancelled: { label: '已取消', color: 'text-muted-foreground bg-muted', icon: <XCircle size={14} /> },
+  expired: { label: '已过期', color: 'text-muted-foreground bg-muted', icon: <AlertCircle size={14} /> },
+  refunded: { label: '已退款', color: 'text-blue-600 bg-blue-500/10', icon: <AlertCircle size={14} /> },
 };
 
 // 支付方式配置
@@ -137,16 +137,16 @@ export const AdminOrders: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50">
+      {/* 顶部导航 - 毛玻璃效果 */}
+      <header className="bg-white/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" onClick={() => navigate('/admin/users')}>
               <ArrowLeft size={18} />
               <span className="ml-1">返回</span>
             </Button>
-            <h1 className="text-lg font-semibold text-gray-800">订单管理</h1>
+            <h1 className="text-lg font-semibold text-foreground">订单管理</h1>
           </div>
           <UserMenu />
         </div>
@@ -154,10 +154,10 @@ export const AdminOrders: React.FC = () => {
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* 筛选区域 */}
-        <Card className="p-4 mb-6">
+        <Card className="p-4 mb-6 bg-white/80 backdrop-blur-sm border-white/20">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <Search size={16} className="text-gray-400" />
+              <Search size={16} className="text-muted-foreground" />
               <Input
                 placeholder="搜索订单号"
                 value={searchOrderNo}
@@ -170,7 +170,7 @@ export const AdminOrders: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="px-3 py-2 border border-border rounded-lg text-sm bg-background"
             >
               <option value="">全部状态</option>
               <option value="pending">待支付</option>
@@ -183,7 +183,7 @@ export const AdminOrders: React.FC = () => {
             <select
               value={paymentMethodFilter}
               onChange={(e) => setPaymentMethodFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="px-3 py-2 border border-border rounded-lg text-sm bg-background"
             >
               <option value="">全部支付方式</option>
               <option value="wechat">微信支付</option>
@@ -197,7 +197,7 @@ export const AdminOrders: React.FC = () => {
               重置
             </Button>
 
-            <span className="ml-auto text-sm text-gray-500">共 {total} 条记录</span>
+            <span className="ml-auto text-sm text-muted-foreground">共 {total} 条记录</span>
           </div>
         </Card>
 
@@ -207,9 +207,9 @@ export const AdminOrders: React.FC = () => {
             <Loading />
           </div>
         ) : orders.length === 0 ? (
-          <Card className="p-12 text-center">
-            <FileText size={48} className="mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">暂无订单记录</p>
+          <Card className="p-12 text-center bg-white/80 backdrop-blur-sm">
+            <FileText size={48} className="mx-auto text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground">暂无订单记录</p>
           </Card>
         ) : (
           <OrderTable
@@ -257,61 +257,61 @@ const OrderTable: React.FC<OrderTableProps> = ({
   deletingId,
 }) => {
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden bg-white/80 backdrop-blur-sm">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-muted/50 border-b border-border">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 订单号
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 用户
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 套餐
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 金额
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 支付方式
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 状态
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 创建时间
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 支付时间
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">
                 操作
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {orders.map((order) => {
               const statusConfig = getStatusConfig(order.status);
               return (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-mono">
+                <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-3 text-sm text-foreground font-mono">
                     {order.order_no}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <User size={14} />
                       {order.username}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-900">
+                  <td className="px-4 py-3 text-sm text-foreground">
                     {order.plan_name || '-'}
                   </td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 text-sm font-medium text-foreground">
                     ¥{order.amount}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {order.payment_method ? (
                       <div className="flex items-center gap-1">
                         <CreditCard size={14} />
@@ -329,10 +329,10 @@ const OrderTable: React.FC<OrderTableProps> = ({
                       {statusConfig.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatDate(order.created_at)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
                     {formatDate(order.payment_time)}
                   </td>
                   <td className="px-4 py-3">
@@ -378,7 +378,7 @@ const Pagination: React.FC<PaginationProps> = ({ page, totalPages, total, onPage
         <ChevronLeft size={16} />
         上一页
       </Button>
-      <span className="text-sm text-gray-600">
+      <span className="text-sm text-muted-foreground">
         第 {page} / {totalPages} 页，共 {total} 条
       </span>
       <Button

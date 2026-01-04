@@ -1,8 +1,11 @@
 /**
  * FAQ 常见问题
- * 手风琴折叠样式
+ * Vercel/Linear 风格 - 精致手风琴 + 微妙动效
  */
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const faqs = [
   {
@@ -40,29 +43,54 @@ export const FAQ = () => {
   };
 
   return (
-    <section id="faq" className="py-24 px-6 bg-gray-50">
+    <section id="faq" className="relative py-32 px-6 overflow-hidden">
+      {/* 背景 */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background via-muted/20 to-background" />
+
       <div className="max-w-3xl mx-auto">
         {/* 标题 */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-semibold text-gray-900 mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+        >
+          <motion.span
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="inline-block px-4 py-1.5 mb-6
+                      text-sm font-medium text-primary
+                      bg-primary/10 border border-primary/20 rounded-full"
+          >
             常见问题
+          </motion.span>
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6 tracking-tight">
+            有疑问？
           </h2>
-          <p className="text-xl text-gray-500">
-            有疑问？这里可能有你想要的答案
+          <p className="text-xl text-muted-foreground">
+            这里可能有你想要的答案
           </p>
-        </div>
+        </motion.div>
 
         {/* FAQ 列表 */}
-        <div className="space-y-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="space-y-3"
+        >
           {faqs.map((faq, index) => (
             <FAQItem
               key={index}
               faq={faq}
               isOpen={openIndex === index}
               onToggle={() => toggleFaq(index)}
+              index={index}
             />
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -72,28 +100,64 @@ interface FAQItemProps {
   faq: { question: string; answer: string };
   isOpen: boolean;
   onToggle: () => void;
+  index: number;
 }
 
-const FAQItem = ({ faq, isOpen, onToggle }: FAQItemProps) => (
-  <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-    <button
-      onClick={onToggle}
-      className="w-full px-6 py-5 flex items-center justify-between text-left"
-    >
-      <span className="font-medium text-gray-900">{faq.question}</span>
-      <svg
-        className={`w-5 h-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
+const FAQItem = ({ faq, isOpen, onToggle, index }: FAQItemProps) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ delay: index * 0.1 }}
+    className="group"
+  >
+    <div className={cn(
+      "rounded-2xl overflow-hidden",
+      "bg-white/60 dark:bg-white/5",
+      "backdrop-blur-xl",
+      "border border-white/40 dark:border-white/10",
+      "shadow-[0_4px_16px_rgb(0_0_0/0.04)]",
+      "hover:shadow-[0_8px_32px_rgb(0_0_0/0.08)]",
+      "transition-all duration-300",
+      isOpen && "border-primary/20"
+    )}>
+      <button
+        onClick={onToggle}
+        className={cn(
+          "w-full px-6 py-5 flex items-center justify-between text-left",
+          "hover:bg-black/[0.02] dark:hover:bg-white/[0.02]",
+          "transition-colors duration-200"
+        )}
       >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
-    {isOpen && (
-      <div className="px-6 pb-5 text-gray-500 leading-relaxed">
-        {faq.answer}
-      </div>
-    )}
-  </div>
+        <span className="font-medium text-foreground pr-4">{faq.question}</span>
+        <motion.div
+          animate={{ rotate: isOpen ? 180 : 0 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          className={cn(
+            "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+            "bg-muted/50 group-hover:bg-muted transition-colors"
+          )}
+        >
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        </motion.div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          >
+            <div className="px-6 pb-5 text-muted-foreground leading-relaxed border-t border-border/30">
+              <div className="pt-4">
+                {faq.answer}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  </motion.div>
 );

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { cn } from '@/utils';
+import { cn } from '@/lib/utils';
 
 interface ToastProps {
   message: string;
@@ -31,7 +31,7 @@ export const Toast: React.FC<ToastProps> = ({
   const styles = {
     success: 'bg-green-500 text-white',
     error: 'bg-red-500 text-white',
-    info: 'bg-gray-900 text-white',
+    info: 'bg-foreground text-background',
   };
 
   return (
@@ -59,18 +59,19 @@ export const Toast: React.FC<ToastProps> = ({
 export const useToast = () => {
   const [toasts, setToasts] = React.useState<Array<{ id: string; props: Omit<ToastProps, 'onClose'> }>>([]);
 
-  const show = (props: Omit<ToastProps, 'onClose'>) => {
+  // 使用 useCallback 稳定 show 函数引用，避免依赖它的 useCallback 不断重新创建
+  const show = React.useCallback((props: Omit<ToastProps, 'onClose'>) => {
     const id = Math.random().toString(36);
     setToasts((prev) => [...prev, { id, props }]);
-  };
+  }, []);
 
-  const remove = (id: string) => {
+  const remove = React.useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
-  };
+  }, []);
 
-  return {
-    show,
-    ToastContainer: () => (
+  // 使用 useMemo 稳定 ToastContainer 组件引用
+  const ToastContainer = React.useMemo(() => {
+    return () => (
       <>
         {toasts.map((toast) => (
           <Toast
@@ -80,7 +81,12 @@ export const useToast = () => {
           />
         ))}
       </>
-    ),
+    );
+  }, [toasts, remove]);
+
+  return {
+    show,
+    ToastContainer,
   };
 };
 

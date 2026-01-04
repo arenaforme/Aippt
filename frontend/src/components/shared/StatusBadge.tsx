@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/utils';
+import { cn } from '@/lib/utils';
 import type { PageStatus } from '@/types';
 
 interface StatusBadgeProps {
@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 const statusConfig: Record<PageStatus, { label: string; className: string }> = {
   DRAFT: {
     label: '草稿',
-    className: 'bg-gray-100 text-gray-600',
+    className: 'bg-muted text-muted-foreground',
   },
   DESCRIPTION_GENERATED: {
     label: '已生成描述',

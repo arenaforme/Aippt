@@ -1,7 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { cn } from '@/utils';
+import { cn } from '@/lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -42,19 +42,19 @@ export const Modal: React.FC<ModalProps> = ({
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
-            'relative bg-white rounded-panel shadow-xl w-full transition-all duration-200',
+            'relative bg-card rounded-panel shadow-xl w-full transition-all duration-200',
             sizes[size]
           )}
           onClick={(e) => e.stopPropagation()}
         >
           {/* 标题栏 */}
           {title && (
-            <div className="flex items-center justify-between px-8 py-6 bg-banana-50 rounded-t-panel">
-              <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
+            <div className="flex items-center justify-between px-8 py-6 bg-accent rounded-t-panel">
+              <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
               {!hideCloseButton && (
                 <button
                   onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <X size={24} />
                 </button>

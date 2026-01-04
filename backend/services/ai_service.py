@@ -381,10 +381,10 @@ class AIService:
             Exception with detailed error message if generation fails
         """
         try:
-            logger.debug(f"Reference image: {ref_image_path}")
+            logger.info(f"🖼️ [AIService.generate_image] Reference image path: {ref_image_path}")
             if additional_ref_images:
-                logger.debug(f"Additional reference images: {len(additional_ref_images)}")
-            logger.debug(f"Config - aspect_ratio: {aspect_ratio}, resolution: {resolution}")
+                logger.info(f"🖼️ [AIService.generate_image] Additional reference images: {len(additional_ref_images)}")
+            logger.info(f"🖼️ [AIService.generate_image] Config - aspect_ratio: {aspect_ratio}, resolution: {resolution}")
 
             # 构建参考图片列表
             ref_images = []
@@ -395,6 +395,7 @@ class AIService:
                     raise FileNotFoundError(f"Reference image not found: {ref_image_path}")
                 main_ref_image = Image.open(ref_image_path)
                 ref_images.append(main_ref_image)
+                logger.info(f"🖼️ [AIService.generate_image] Loaded main ref image: size={main_ref_image.size}, mode={main_ref_image.mode}")
             
             # 添加额外的参考图片
             if additional_ref_images:
@@ -424,8 +425,8 @@ class AIService:
                                 logger.warning(f"MinerU image file not found (with prefix matching): {ref_img}, skipping...")
                         else:
                             logger.warning(f"Invalid image reference: {ref_img}, skipping...")
-            
-            logger.debug(f"Calling image provider for generation with {len(ref_images)} reference images...")
+
+            logger.info(f"🖼️ [AIService.generate_image] Calling image provider with {len(ref_images)} reference images")
             
             # 使用 image_provider 生成图片
             return self.image_provider.generate_image(

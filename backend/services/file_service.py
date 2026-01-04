@@ -56,24 +56,29 @@ class FileService:
     def save_template_image(self, file, project_id: str) -> str:
         """
         Save template image file
-        
+
         Args:
             file: FileStorage object from Flask request
             project_id: Project ID
-        
+
         Returns:
             Relative file path from upload folder
         """
         template_dir = self._get_template_dir(project_id)
-        
+
+        # Delete existing template files to avoid conflicts
+        for existing_file in template_dir.iterdir():
+            if existing_file.is_file() and existing_file.stem == 'template':
+                existing_file.unlink()
+
         # Secure filename and add unique suffix
         original_filename = secure_filename(file.filename)
         ext = original_filename.rsplit('.', 1)[1].lower() if '.' in original_filename else 'png'
         filename = f"template.{ext}"
-        
+
         filepath = template_dir / filename
         file.save(str(filepath))
-        
+
         # Return relative path
         return filepath.relative_to(self.upload_folder).as_posix()
     

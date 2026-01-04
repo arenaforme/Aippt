@@ -1,10 +1,17 @@
 /**
  * PDF 转 PPTX 工具页面
  * 将 PDF 演示文稿转换为可编辑的 PPTX 文件
+ * 设计规范：AppShell 布局 + 毛玻璃卡片 + Spring 动画
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Download, ArrowLeft, Loader2, CheckCircle, XCircle, Crown } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Upload, FileText, Download, Loader2, CheckCircle, XCircle, Home } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { AppShell } from '@/components/layout/AppShell';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Button, Card } from '@/components/shared';
+import { fadeInUp, staggerContainer } from '@/lib/animations';
 import * as api from '@/api/endpoints';
 import * as membershipApi from '@/api/membership';
 import { appendTokenToUrl } from '@/utils';
@@ -159,175 +166,196 @@ export default function PdfToPptx() {
     ? Math.round(((progress.completed || 0) / progress.total) * 100)
     : 0;
 
+  // 顶栏右侧内容
+  const topbarRightContent = (
+    <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate('/')}>
+      <Home className="h-4 w-4" />
+      <span className="hidden sm:inline">主页</span>
+    </Button>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
-          <button
-            onClick={() => navigate('/')}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+    <AppShell showSidebar={true} topbarRightContent={topbarRightContent}>
+      <motion.div
+        className="max-w-4xl mx-auto px-4 py-8"
+        variants={fadeInUp}
+        initial="initial"
+        animate="animate"
+      >
+        <PageHeader
+          title="PDF 转 PPTX"
+          description="将 PDF 演示文稿转换为可编辑的 PowerPoint 文件"
+        />
+
+        <motion.div
+          className="space-y-6"
+          variants={staggerContainer}
+          initial="initial"
+          animate="animate"
+        >
+          {/* 主转换卡片 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">PDF 转 PPTX</h1>
-            <p className="text-sm text-gray-500">将 PDF 演示文稿转换为可编辑的 PowerPoint 文件</p>
-          </div>
-        </div>
-      </header>
+            <Card className={cn(
+              'p-8 bg-card/80 backdrop-blur-sm',
+              'border border-border/50',
+              'rounded-xl'
+            )}>
+              {/* 文件上传区域 */}
+              {status === 'idle' && (
+                <div
+                  className={cn(
+                    'border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer',
+                    selectedFile
+                      ? 'border-primary/50 bg-primary/5'
+                      : 'border-border hover:border-primary/30 hover:bg-muted/30'
+                  )}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
 
-      {/* 主内容区 */}
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-          {/* 文件上传区域 */}
-          {status === 'idle' && (
-            <div
-              className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
-                selectedFile ? 'border-blue-300 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-              }`}
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
+                  {selectedFile ? (
+                    <div className="space-y-4">
+                      <FileText className="w-16 h-16 mx-auto text-primary" />
+                      <div>
+                        <p className="text-lg font-medium text-foreground">{selectedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConvert();
+                        }}
+                      >
+                        开始转换
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <Upload className="w-16 h-16 mx-auto text-muted-foreground/50" />
+                      <div>
+                        <p className="text-lg font-medium text-foreground">拖拽 PDF 文件到此处</p>
+                        <p className="text-sm text-muted-foreground">或点击选择文件</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
-              {selectedFile ? (
-                <div className="space-y-4">
-                  <FileText className="w-16 h-16 mx-auto text-blue-500" />
+              {/* 上传/处理中状态 */}
+              {(status === 'uploading' || status === 'processing') && (
+                <div className="text-center py-12 space-y-6">
+                  <Loader2 className="w-16 h-16 mx-auto text-primary animate-spin" />
                   <div>
-                    <p className="text-lg font-medium text-gray-900">{selectedFile.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    <p className="text-lg font-medium text-foreground">
+                      {status === 'uploading' ? '正在上传...' : '正在转换...'}
                     </p>
+                    {progress.stage_name && (
+                      <p className="text-sm text-muted-foreground mt-1">{progress.stage_name}</p>
+                    )}
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleConvert();
-                    }}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    开始转换
-                  </button>
+
+                  {/* 进度条 */}
+                  {progress.total && progress.total > 0 && (
+                    <div className="max-w-md mx-auto">
+                      <div className="flex justify-between text-sm text-muted-foreground mb-2">
+                        <span>进度</span>
+                        <span>{progressPercent}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        第 {progress.current_page || 0} / {progress.total} 页
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <Upload className="w-16 h-16 mx-auto text-gray-400" />
+              )}
+
+              {/* 完成状态 */}
+              {status === 'completed' && (
+                <div className="text-center py-12 space-y-6">
+                  <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
                   <div>
-                    <p className="text-lg font-medium text-gray-700">拖拽 PDF 文件到此处</p>
-                    <p className="text-sm text-gray-500">或点击选择文件</p>
+                    <p className="text-lg font-medium text-foreground">转换完成！</p>
+                    {progress.pages_count && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        共 {progress.pages_count} 页，{progress.text_blocks_count || 0} 个文本块
+                        {progress.images_count ? `，${progress.images_count} 张图片` : ''}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex justify-center gap-4">
+                    <Button onClick={handleDownload} className="gap-2">
+                      <Download className="w-4 h-4" />
+                      下载 PPTX
+                    </Button>
+                    <Button variant="outline" onClick={handleReset}>
+                      转换其他文件
+                    </Button>
                   </div>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* 上传/处理中状态 */}
-          {(status === 'uploading' || status === 'processing') && (
-            <div className="text-center py-12 space-y-6">
-              <Loader2 className="w-16 h-16 mx-auto text-blue-500 animate-spin" />
-              <div>
-                <p className="text-lg font-medium text-gray-900">
-                  {status === 'uploading' ? '正在上传...' : '正在转换...'}
-                </p>
-                {progress.stage_name && (
-                  <p className="text-sm text-gray-500 mt-1">{progress.stage_name}</p>
-                )}
-              </div>
-
-              {/* 进度条 */}
-              {progress.total && progress.total > 0 && (
-                <div className="max-w-md mx-auto">
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>进度</span>
-                    <span>{progressPercent}%</span>
+              {/* 失败状态 */}
+              {status === 'failed' && (
+                <div className="text-center py-12 space-y-6">
+                  <XCircle className="w-16 h-16 mx-auto text-destructive" />
+                  <div>
+                    <p className="text-lg font-medium text-foreground">转换失败</p>
+                    <p className="text-sm text-destructive mt-1">{errorMessage}</p>
                   </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 transition-all duration-300"
-                      style={{ width: `${progressPercent}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    第 {progress.current_page || 0} / {progress.total} 页
-                  </p>
+                  <Button variant="outline" onClick={handleReset}>
+                    重试
+                  </Button>
                 </div>
               )}
-            </div>
-          )}
 
-          {/* 完成状态 */}
-          {status === 'completed' && (
-            <div className="text-center py-12 space-y-6">
-              <CheckCircle className="w-16 h-16 mx-auto text-green-500" />
-              <div>
-                <p className="text-lg font-medium text-gray-900">转换完成！</p>
-                {progress.pages_count && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    共 {progress.pages_count} 页，{progress.text_blocks_count || 0} 个文本块
-                    {progress.images_count ? `，${progress.images_count} 张图片` : ''}
-                  </p>
-                )}
-              </div>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={handleDownload}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
-                >
-                  <Download className="w-5 h-5" />
-                  下载 PPTX
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                >
-                  转换其他文件
-                </button>
-              </div>
-            </div>
-          )}
+              {/* 错误提示 */}
+              {errorMessage && status === 'idle' && (
+                <p className="text-center text-destructive mt-4">{errorMessage}</p>
+              )}
+            </Card>
+          </motion.div>
 
-          {/* 失败状态 */}
-          {status === 'failed' && (
-            <div className="text-center py-12 space-y-6">
-              <XCircle className="w-16 h-16 mx-auto text-red-500" />
-              <div>
-                <p className="text-lg font-medium text-gray-900">转换失败</p>
-                <p className="text-sm text-red-500 mt-1">{errorMessage}</p>
-              </div>
-              <button
-                onClick={handleReset}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-              >
-                重试
-              </button>
-            </div>
-          )}
-
-          {/* 错误提示 */}
-          {errorMessage && status === 'idle' && (
-            <p className="text-center text-red-500 mt-4">{errorMessage}</p>
-          )}
-        </div>
-
-        {/* 说明信息 */}
-        <div className="mt-8 bg-blue-50 rounded-xl p-6">
-          <h3 className="font-medium text-blue-900 mb-3">使用说明</h3>
-          <ul className="text-sm text-blue-800 space-y-2">
-            <li>• 支持由 NotebookLM、Google Slides 等工具生成的 PDF 演示文稿</li>
-            <li>• 转换后的 PPTX 文件中的文本可直接编辑</li>
-            <li>• PDF 中的图片会被保留并嵌入到 PPTX 中</li>
-            <li>• 建议使用矢量文本的 PDF（非扫描件）以获得最佳效果</li>
-          </ul>
-        </div>
-      </main>
-    </div>
+          {/* 说明信息 */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, type: 'spring', stiffness: 300, damping: 25 }}
+          >
+            <Card className={cn(
+              'p-6 bg-primary/5 border-primary/10',
+              'rounded-xl'
+            )}>
+              <h3 className="font-medium text-foreground mb-3">使用说明</h3>
+              <ul className="text-sm text-muted-foreground space-y-2">
+                <li>• 支持由 NotebookLM、Google Slides 等工具生成的 PDF 演示文稿</li>
+                <li>• 转换后的 PPTX 文件中的文本可直接编辑</li>
+                <li>• PDF 中的图片会被保留并嵌入到 PPTX 中</li>
+                <li>• 建议使用矢量文本的 PDF（非扫描件）以获得最佳效果</li>
+              </ul>
+            </Card>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </AppShell>
   );
 }

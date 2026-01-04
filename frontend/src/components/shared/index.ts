@@ -26,4 +26,11 @@ export { ForcePasswordChangeModal } from './ForcePasswordChangeModal';
 export { ExportProgressModal } from './ExportProgressModal';
 export { PaymentModal } from './PaymentModal';
 
+// 新增通用组件
+export { LoadingSpinner } from './LoadingSpinner';
+export { EmptyState } from './EmptyState';
+export { ErrorState } from './ErrorState';
+export { GenerationProgress } from './GenerationProgress';
+export { LazyImage } from './LazyImage';
+
 

@@ -149,8 +149,8 @@ export const MembershipPlans: React.FC = () => {
       <ToastContainer />
       {ConfirmDialog}
 
-      {/* 顶栏 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3">
+      {/* 顶栏 - 毛玻璃效果 */}
+      <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-border/50 sticky top-0 z-10 px-4 md:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate('/admin/users')}>
@@ -158,7 +158,7 @@ export const MembershipPlans: React.FC = () => {
             </Button>
             <div className="flex items-center gap-2">
               <Crown size={24} className="text-purple-600" />
-              <h1 className="text-xl font-bold text-gray-900">套餐管理</h1>
+              <h1 className="text-xl font-bold text-foreground">套餐管理</h1>
             </div>
           </div>
           <UserMenu />
@@ -167,10 +167,10 @@ export const MembershipPlans: React.FC = () => {
 
       {/* 主内容 */}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-6">
-        <Card className="p-6">
+        <Card className="p-6 bg-white/80 backdrop-blur-sm">
           {/* 工具栏 */}
           <div className="flex items-center justify-between mb-6">
-            <div className="text-sm text-gray-500">共 {plans.length} 个套餐</div>
+            <div className="text-sm text-muted-foreground">共 {plans.length} 个套餐</div>
             <Button variant="primary" icon={<Plus size={18} />} onClick={openCreateModal}>
               创建套餐
             </Button>
@@ -190,7 +190,7 @@ export const MembershipPlans: React.FC = () => {
           </div>
 
           {plans.length === 0 && (
-            <div className="text-center py-8 text-gray-500">暂无套餐数据</div>
+            <div className="text-center py-8 text-muted-foreground">暂无套餐数据</div>
           )}
         </Card>
       </main>
@@ -213,7 +213,7 @@ export const MembershipPlans: React.FC = () => {
 
 // 等级配置
 const LEVEL_CONFIG: Record<string, { label: string; color: string; bgColor: string }> = {
-  free: { label: '免费', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  free: { label: '免费', color: 'text-muted-foreground', bgColor: 'bg-muted' },
   basic: { label: '基础', color: 'text-blue-600', bgColor: 'bg-blue-100' },
   premium: { label: '高级', color: 'text-purple-600', bgColor: 'bg-purple-100' },
 };
@@ -241,56 +241,56 @@ const PlanCard: React.FC<{
         {plan.is_default && (
           <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">默认</span>
         )}
-        <span className={`text-xs px-2 py-0.5 rounded ${plan.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+        <span className={`text-xs px-2 py-0.5 rounded ${plan.is_active ? 'bg-green-100 text-green-700' : 'bg-muted text-muted-foreground'}`}>
           {plan.is_active ? '启用' : '禁用'}
         </span>
       </div>
 
       {/* 套餐信息 */}
       <div className="mb-4">
-        <h3 className="text-lg font-bold text-gray-800">{plan.name}</h3>
+        <h3 className="text-lg font-bold text-foreground">{plan.name}</h3>
         <div className="flex items-center gap-2 mt-1">
           <span className={`text-xs px-2 py-0.5 rounded ${levelConfig.color} ${levelConfig.bgColor}`}>
             {levelConfig.label}
           </span>
-          <span className="text-xs text-gray-500">{PERIOD_CONFIG[plan.period_type]}</span>
+          <span className="text-xs text-muted-foreground">{PERIOD_CONFIG[plan.period_type]}</span>
         </div>
       </div>
 
       {/* 价格和时长 */}
       <div className="flex items-baseline gap-1 mb-4">
-        <span className="text-2xl font-bold text-gray-900">¥{plan.price}</span>
-        <span className="text-sm text-gray-500">/ {plan.duration_days}天</span>
+        <span className="text-2xl font-bold text-foreground">¥{plan.price}</span>
+        <span className="text-sm text-muted-foreground">/ {plan.duration_days}天</span>
       </div>
 
       {/* 配额信息 */}
       <div className="space-y-2 mb-4 text-sm">
-        <div className="flex items-center gap-2 text-gray-600">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Image size={14} className="text-blue-500" />
           <span>图片配额: {plan.image_quota}{plan.period_type !== 'none' ? '/月' : ''}</span>
         </div>
-        <div className="flex items-center gap-2 text-gray-600">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Zap size={14} className="text-purple-500" />
           <span>高级配额: {plan.premium_quota}{plan.period_type !== 'none' ? '/月' : ''}</span>
         </div>
-        <div className="flex items-center gap-2 text-gray-600">
-          <Clock size={14} className="text-gray-400" />
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Clock size={14} className="text-muted-foreground" />
           <span>排序: {plan.sort_order}</span>
         </div>
       </div>
 
       {/* 操作按钮 */}
-      <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
+      <div className="flex items-center gap-2 pt-3 border-t border-border">
         <button
           onClick={onToggleActive}
-          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+          className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
           title={plan.is_active ? '禁用' : '启用'}
         >
           {plan.is_active ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
         </button>
         <button
           onClick={onEdit}
-          className="p-2 text-gray-500 hover:text-banana-600 hover:bg-banana-50 rounded"
+          className="p-2 text-muted-foreground hover:text-banana-600 hover:bg-banana-50 rounded transition-colors"
           title="编辑"
         >
           <Edit2 size={16} />
@@ -298,7 +298,7 @@ const PlanCard: React.FC<{
         <button
           onClick={onDelete}
           disabled={plan.is_default}
-          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-30"
+          className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-30 transition-colors"
           title="删除"
         >
           <Trash2 size={16} />
@@ -342,11 +342,11 @@ const PlanFormModal: React.FC<{
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">会员等级</label>
+          <label className="block text-sm font-medium text-foreground mb-2">会员等级</label>
           <select
             value={form.level}
             onChange={(e) => setForm({ ...form, level: e.target.value as PlanFormData['level'] })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
           >
             <option value="free">免费</option>
             <option value="basic">基础</option>
@@ -354,11 +354,11 @@ const PlanFormModal: React.FC<{
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">付费周期</label>
+          <label className="block text-sm font-medium text-foreground mb-2">付费周期</label>
           <select
             value={form.period_type}
             onChange={(e) => setForm({ ...form, period_type: e.target.value as PlanFormData['period_type'] })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
           >
             <option value="none">永久</option>
             <option value="monthly">月付</option>
@@ -369,30 +369,30 @@ const PlanFormModal: React.FC<{
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">价格（元）</label>
+          <label className="block text-sm font-medium text-foreground mb-2">价格（元）</label>
           <input
             type="number"
             min="0"
             value={form.price}
             onChange={(e) => setForm({ ...form, price: parseFloat(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">有效天数</label>
+          <label className="block text-sm font-medium text-foreground mb-2">有效天数</label>
           <input
             type="number"
             min="1"
             value={form.duration_days}
             onChange={(e) => setForm({ ...form, duration_days: parseInt(e.target.value) || 1 })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             <span className="flex items-center gap-1"><Image size={14} className="text-blue-500" /> 图片配额{form.period_type !== 'none' ? '（/月）' : ''}</span>
           </label>
           <input
@@ -400,11 +400,11 @@ const PlanFormModal: React.FC<{
             min="0"
             value={form.image_quota}
             onChange={(e) => setForm({ ...form, image_quota: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             <span className="flex items-center gap-1"><Zap size={14} className="text-purple-500" /> 高级配额{form.period_type !== 'none' ? '（/月）' : ''}</span>
           </label>
           <input
@@ -412,19 +412,19 @@ const PlanFormModal: React.FC<{
             min="0"
             value={form.premium_quota}
             onChange={(e) => setForm({ ...form, premium_quota: parseInt(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+            className="w-full px-3 py-2 border border-border rounded-lg bg-background"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">排序（数字越小越靠前）</label>
+        <label className="block text-sm font-medium text-foreground mb-2">排序（数字越小越靠前）</label>
         <input
           type="number"
           min="0"
           value={form.sort_order}
           onChange={(e) => setForm({ ...form, sort_order: parseInt(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-200 rounded-lg"
+          className="w-full px-3 py-2 border border-border rounded-lg bg-background"
         />
       </div>
 
@@ -434,9 +434,9 @@ const PlanFormModal: React.FC<{
           id="is_active"
           checked={form.is_active}
           onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-          className="rounded border-gray-300"
+          className="rounded border-border"
         />
-        <label htmlFor="is_active" className="text-sm text-gray-700">启用此套餐</label>
+        <label htmlFor="is_active" className="text-sm text-foreground">启用此套餐</label>
       </div>
 
       <div className="flex justify-end gap-3 pt-4">

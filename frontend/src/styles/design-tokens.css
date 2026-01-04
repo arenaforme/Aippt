@@ -1,0 +1,61 @@
+@layer base {
+  :root {
+    /* ========== 颜色 Tokens ========== */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 45 100% 51%;           /* 品牌色 - 香蕉黄 */
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 45 100% 96%;
+    --accent-foreground: 45 100% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 45 100% 51%;
+
+    /* ========== 圆角 Tokens ========== */
+    --radius-sm: 0.375rem;    /* 6px - 小按钮、badge */
+    --radius-md: 0.5rem;      /* 8px - 输入框、小卡片 */
+    --radius-lg: 0.75rem;     /* 12px - 卡片、弹窗 */
+    --radius-xl: 1rem;        /* 16px - 大卡片、模态框 */
+    --radius: var(--radius-lg);
+
+    /* ========== 阴影 Tokens ========== */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-glow: 0 0 20px rgb(255 193 7 / 0.3);
+
+    /* ========== 动效时长 Tokens ========== */
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+  }
+
+  /* ========== 暗色模式 ========== */
+  .dark {
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 45 100% 15%;
+    --accent-foreground: 45 100% 70%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+  }
+}

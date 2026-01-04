@@ -126,9 +126,9 @@ export const DetailEditor: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* 顶栏 */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-3 md:px-6 py-2 md:py-3 flex-shrink-0">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex flex-col">
+      {/* 顶栏 - 毛玻璃效果 */}
+      <header className="bg-background/80 backdrop-blur-md shadow-sm border-b border-border/50 px-3 md:px-6 py-2 md:py-3 flex-shrink-0 sticky top-0 z-10">
         <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* 左侧：Logo 和标题 */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
@@ -151,7 +151,7 @@ export const DetailEditor: React.FC = () => {
               <span className="text-xl md:text-2xl">🍌</span>
               <span className="text-base md:text-xl font-bold">AI演示眼</span>
             </div>
-            <span className="text-gray-400 hidden lg:inline">|</span>
+            <span className="text-muted-foreground hidden lg:inline">|</span>
             <span className="text-sm md:text-lg font-semibold hidden lg:inline">编辑页面描述</span>
           </div>
           
@@ -206,7 +206,7 @@ export const DetailEditor: React.FC = () => {
       </header>
 
       {/* 操作栏 */}
-      <div className="bg-white border-b border-gray-200 px-3 md:px-6 py-3 md:py-4 flex-shrink-0">
+      <div className="bg-background/60 backdrop-blur-sm border-b border-border/50 px-3 md:px-6 py-3 md:py-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2 sm:gap-3 flex-1">
             <Button
@@ -217,7 +217,7 @@ export const DetailEditor: React.FC = () => {
             >
               批量生成描述
             </Button>
-            <span className="text-xs md:text-sm text-gray-500 whitespace-nowrap">
+            <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
               {currentProject.pages.filter((p) => p.description_content).length} /{' '}
               {currentProject.pages.length} 页已完成
             </span>
@@ -235,14 +235,14 @@ export const DetailEditor: React.FC = () => {
             showFiles={true}
             showImages={true}
           />
-          
+
           {currentProject.pages.length === 0 ? (
             <div className="text-center py-12 md:py-20">
-              <div className="flex justify-center mb-4"><FileText size={48} className="text-gray-300" /></div>
-              <h3 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">
+              <div className="flex justify-center mb-4"><FileText size={48} className="text-muted-foreground/30" /></div>
+              <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2">
                 还没有页面
               </h3>
-              <p className="text-sm md:text-base text-gray-500 mb-6">
+              <p className="text-sm md:text-base text-muted-foreground mb-6">
                 请先返回大纲编辑页添加页面
               </p>
               <Button

@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/utils';
+import { cn } from '@/lib/utils';
 
 interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;
@@ -15,16 +15,16 @@ const TextareaComponent = React.forwardRef<HTMLTextAreaElement, TextareaProps>((
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-muted-foreground mb-2">
           {label}
         </label>
       )}
       <textarea
         ref={ref}
         className={cn(
-          'w-full min-h-[120px] px-4 py-3 rounded-lg border border-gray-200 bg-white',
-          'focus:outline-none focus:ring-2 focus:ring-banana-500 focus:border-transparent',
-          'placeholder:text-gray-400 transition-all resize-y',
+          'w-full min-h-[120px] px-4 py-3 rounded-lg border border-border bg-card',
+          'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
+          'placeholder:text-muted-foreground transition-all resize-y',
           error && 'border-red-500 focus:ring-red-500',
           className
         )}
