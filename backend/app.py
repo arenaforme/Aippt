@@ -202,6 +202,17 @@ def _load_settings_to_config(app):
             else:
                 logging.info("API key is empty in settings, using env var or default")
 
+        # Load model settings
+        if settings.text_model:
+            app.config['TEXT_MODEL'] = settings.text_model
+            logging.info(f"Loaded TEXT_MODEL from settings: {settings.text_model}")
+        if settings.image_model:
+            app.config['IMAGE_MODEL'] = settings.image_model
+            logging.info(f"Loaded IMAGE_MODEL from settings: {settings.image_model}")
+        if settings.image_caption_model:
+            app.config['IMAGE_CAPTION_MODEL'] = settings.image_caption_model
+            logging.info(f"Loaded IMAGE_CAPTION_MODEL from settings: {settings.image_caption_model}")
+
         # Load image generation settings
         app.config['DEFAULT_RESOLUTION'] = settings.image_resolution
         app.config['DEFAULT_ASPECT_RATIO'] = settings.image_aspect_ratio
