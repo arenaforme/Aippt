@@ -138,9 +138,9 @@ def upgrade() -> None:
         {'id': str(uuid.uuid4()), 'feature_code': 'pdf_to_pptx', 'feature_name': 'PDF转可编辑PPTX',
          'min_level': 'premium', 'consume_quota': True, 'quota_type': 'premium',
          'is_active': True, 'created_at': now, 'updated_at': now},
-        # 下载导出文件 - 仅高级会员
+        # 下载导出文件 - 所有用户可用
         {'id': str(uuid.uuid4()), 'feature_code': 'download', 'feature_name': '下载导出文件',
-         'min_level': 'premium', 'consume_quota': False, 'quota_type': None,
+         'min_level': 'free', 'consume_quota': False, 'quota_type': None,
          'is_active': True, 'created_at': now, 'updated_at': now},
     ])
 
