@@ -343,6 +343,9 @@ export const UserManagement: React.FC = () => {
               <Button variant="outline" icon={<FileText size={18} />} onClick={() => navigate('/admin/orders')}>
                 订单管理
               </Button>
+              <Button variant="outline" icon={<FileText size={18} />} onClick={() => navigate('/admin/agreements')}>
+                协议管理
+              </Button>
               <Button variant="primary" icon={<Plus size={18} />} onClick={() => setIsCreateModalOpen(true)}>
                 创建用户
               </Button>

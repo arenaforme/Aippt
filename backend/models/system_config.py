@@ -19,6 +19,8 @@ class SystemConfig(db.Model):
 
     # 配置键常量
     KEY_ALLOW_REGISTRATION = 'allow_registration'
+    KEY_USER_AGREEMENT = 'user_agreement'
+    KEY_MEMBERSHIP_AGREEMENT = 'membership_agreement'
 
     @classmethod
     def get_value(cls, key: str, default: str = None) -> str:
@@ -61,3 +63,25 @@ class SystemConfig(db.Model):
 
     def __repr__(self):
         return f'<SystemConfig {self.key}={self.value}>'
+
+    # ==================== 协议相关方法 ====================
+
+    @classmethod
+    def get_user_agreement(cls) -> str:
+        """获取用户协议内容"""
+        return cls.get_value(cls.KEY_USER_AGREEMENT, '')
+
+    @classmethod
+    def set_user_agreement(cls, content: str):
+        """设置用户协议内容"""
+        return cls.set_value(cls.KEY_USER_AGREEMENT, content)
+
+    @classmethod
+    def get_membership_agreement(cls) -> str:
+        """获取会员协议内容"""
+        return cls.get_value(cls.KEY_MEMBERSHIP_AGREEMENT, '')
+
+    @classmethod
+    def set_membership_agreement(cls, content: str):
+        """设置会员协议内容"""
+        return cls.set_value(cls.KEY_MEMBERSHIP_AGREEMENT, content)

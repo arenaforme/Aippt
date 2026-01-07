@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, CheckCircle, XCircle, Clock, ExternalLink } from 'lucide-react';
 import { Button, Card } from '@/components/shared';
+import { MembershipAgreementModal } from './MembershipAgreementModal';
 import * as membershipApi from '@/api/membership';
 import type { Order, MembershipPlan } from '@/api/membership';
 
@@ -24,9 +25,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [countdown, setCountdown] = useState(0);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAgreement, setShowAgreement] = useState(false);
 
   // 创建订单并跳转支付
   const handlePay = async () => {
+    if (!agreedToTerms) {
+      setError('请先阅读并同意会员协议');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
@@ -151,6 +159,27 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               点击下方按钮将跳转到支付页面，您可以选择微信或支付宝完成支付。
             </p>
 
+            {/* 用户协议勾选 */}
+            <div className="flex items-start gap-2 mb-4">
+              <input
+                type="checkbox"
+                id="agree-terms-payment"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 text-banana-500 border-gray-300 rounded focus:ring-banana-500"
+              />
+              <label htmlFor="agree-terms-payment" className="text-sm text-gray-600">
+                我已阅读并同意
+                <button
+                  type="button"
+                  onClick={() => setShowAgreement(true)}
+                  className="text-banana-600 hover:text-banana-700 font-medium ml-1"
+                >
+                  《会员协议》
+                </button>
+              </label>
+            </div>
+
             {error && (
               <div className="text-red-500 text-sm mb-4">{error}</div>
             )}
@@ -238,6 +267,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </div>
         )}
       </Card>
+
+      {/* 会员协议弹窗 */}
+      <MembershipAgreementModal isOpen={showAgreement} onClose={() => setShowAgreement(false)} />
     </div>
   );
 };

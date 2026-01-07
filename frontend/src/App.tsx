@@ -16,6 +16,7 @@ import { Membership } from './pages/Membership';
 import { MembershipPlans } from './pages/MembershipPlans';
 import { Orders } from './pages/Orders';
 import { AdminOrders } from './pages/AdminOrders';
+import { AgreementManagement } from './pages/AgreementManagement';
 import PdfToPptx from './pages/PdfToPptx';
 import { useProjectStore } from './store/useProjectStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -73,6 +74,7 @@ function App() {
         <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogs /></ProtectedRoute>} />
         <Route path="/admin/membership/plans" element={<ProtectedRoute requireAdmin><MembershipPlans /></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
+        <Route path="/admin/agreements" element={<ProtectedRoute requireAdmin><AgreementManagement /></ProtectedRoute>} />
 
         {/* 工具路由 */}
         <Route path="/tools/pdf-to-pptx" element={<ProtectedRoute><PdfToPptx /></ProtectedRoute>} />

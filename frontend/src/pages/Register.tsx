@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { UserPlus, User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
-import { Button, Input, Card, useToast } from '@/components/shared';
+import { Button, Input, Card, useToast, UserAgreementModal } from '@/components/shared';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getRegistrationStatus } from '@/api/auth';
 
@@ -18,6 +18,8 @@ export const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [allowRegistration, setAllowRegistration] = useState<boolean | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAgreement, setShowAgreement] = useState(false);
 
   // 如果已登录，跳转到首页
   useEffect(() => {
@@ -80,6 +82,11 @@ export const Register: React.FC = () => {
 
     if (password !== confirmPassword) {
       show({ message: '两次输入的密码不一致', type: 'error' });
+      return;
+    }
+
+    if (!agreedToTerms) {
+      show({ message: '请阅读并同意用户协议', type: 'error' });
       return;
     }
 
@@ -181,6 +188,27 @@ export const Register: React.FC = () => {
             />
           </div>
 
+          {/* 用户协议勾选 */}
+          <div className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              id="agree-terms"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 w-4 h-4 text-banana-500 border-gray-300 rounded focus:ring-banana-500"
+            />
+            <label htmlFor="agree-terms" className="text-sm text-gray-600">
+              我已阅读并同意
+              <button
+                type="button"
+                onClick={() => setShowAgreement(true)}
+                className="text-banana-600 hover:text-banana-700 font-medium ml-1"
+              >
+                《用户协议》
+              </button>
+            </label>
+          </div>
+
           {/* 注册按钮 */}
           <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
             {isLoading ? (
@@ -211,6 +239,8 @@ export const Register: React.FC = () => {
         </div>
       </Card>
       <ToastContainer />
+      {/* 用户协议弹窗 */}
+      <UserAgreementModal isOpen={showAgreement} onClose={() => setShowAgreement(false)} />
     </div>
   );
 };

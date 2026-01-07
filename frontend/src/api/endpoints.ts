@@ -1105,3 +1105,42 @@ export const getPdfConvertStatus = async (
   }>>(`/api/tools/pdf-to-pptx/${taskId}`);
   return response.data;
 };
+
+// ===== 协议管理 API =====
+
+export type AgreementType = 'user_agreement' | 'membership_agreement';
+
+export interface AgreementResponse {
+  type: AgreementType;
+  content: string;
+}
+
+/**
+ * 获取协议内容（公开接口）
+ */
+export const getAgreement = async (type: AgreementType): Promise<ApiResponse<AgreementResponse>> => {
+  const response = await apiClient.get<ApiResponse<AgreementResponse>>(`/api/auth/agreements/${type}`);
+  return response.data;
+};
+
+/**
+ * 获取协议内容（管理员）
+ */
+export const getAdminAgreement = async (type: AgreementType): Promise<ApiResponse<AgreementResponse>> => {
+  const response = await apiClient.get<ApiResponse<AgreementResponse>>(`/api/admin/agreements/${type}`);
+  return response.data;
+};
+
+/**
+ * 更新协议内容（管理员）
+ */
+export const updateAgreement = async (
+  type: AgreementType,
+  content: string
+): Promise<ApiResponse<AgreementResponse>> => {
+  const response = await apiClient.put<ApiResponse<AgreementResponse>>(
+    `/api/admin/agreements/${type}`,
+    { content }
+  );
+  return response.data;
+};

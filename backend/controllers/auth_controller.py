@@ -110,6 +110,26 @@ def get_registration_status():
     return success_response({'allow_registration': allowed})
 
 
+@auth_bp.route('/agreements/<agreement_type>', methods=['GET'])
+def get_public_agreement(agreement_type):
+    """
+    获取协议内容（公开接口）
+    GET /api/auth/agreements/<agreement_type>
+    agreement_type: user_agreement 或 membership_agreement
+    """
+    if agreement_type == 'user_agreement':
+        content = SystemConfig.get_user_agreement()
+    elif agreement_type == 'membership_agreement':
+        content = SystemConfig.get_membership_agreement()
+    else:
+        return error_response('INVALID_TYPE', '无效的协议类型', 400)
+
+    return success_response({
+        'type': agreement_type,
+        'content': content
+    })
+
+
 @auth_bp.route('/change-password', methods=['PUT'])
 @login_required
 def change_password():

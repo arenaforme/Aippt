@@ -492,3 +492,63 @@ def assign_orphaned_project(project_id):
     )
 
     return success_response({'project': project.to_dict()}, '项目分配成功')
+
+
+# ==================== 协议管理 ====================
+
+@admin_bp.route('/agreements/<agreement_type>', methods=['GET'])
+@admin_required
+def get_agreement(agreement_type):
+    """
+    GET /api/admin/agreements/<agreement_type> - 获取协议内容（管理员）
+    agreement_type: user_agreement 或 membership_agreement
+    """
+    if agreement_type == 'user_agreement':
+        content = SystemConfig.get_user_agreement()
+    elif agreement_type == 'membership_agreement':
+        content = SystemConfig.get_membership_agreement()
+    else:
+        return error_response('无效的协议类型', 400)
+
+    return success_response({
+        'type': agreement_type,
+        'content': content
+    })
+
+
+@admin_bp.route('/agreements/<agreement_type>', methods=['PUT'])
+@admin_required
+def update_agreement(agreement_type):
+    """
+    PUT /api/admin/agreements/<agreement_type> - 更新协议内容
+    Body: { content: string }
+    """
+    data = request.get_json()
+    if not data:
+        return error_response('请求数据不能为空', 400)
+
+    content = data.get('content', '')
+
+    if agreement_type == 'user_agreement':
+        SystemConfig.set_user_agreement(content)
+        type_name = '用户协议'
+    elif agreement_type == 'membership_agreement':
+        SystemConfig.set_membership_agreement(content)
+        type_name = '会员协议'
+    else:
+        return error_response('无效的协议类型', 400)
+
+    AuditLog.log(
+        user_id=g.current_user.id,
+        username=g.current_user.username,
+        action=AuditLog.ACTION_SETTINGS_UPDATE,
+        target_type='agreement',
+        details=f'更新{type_name}',
+        ip_address=get_client_ip(),
+        result='success'
+    )
+
+    return success_response({
+        'type': agreement_type,
+        'content': content
+    }, f'{type_name}更新成功')
