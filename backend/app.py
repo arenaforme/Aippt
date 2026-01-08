@@ -133,6 +133,12 @@ def create_app():
         # Load settings from database and sync to app.config
         _load_settings_to_config(app)
 
+        # 根据数据库配置重新初始化 TaskManager
+        from services.task_manager import task_manager
+        max_task_workers = app.config.get('MAX_TASK_WORKERS', 4)
+        if task_manager.max_workers != max_task_workers:
+            task_manager.reconfigure(max_task_workers)
+
     # Health check endpoint
     @app.route('/health')
     def health_check():
@@ -221,7 +227,8 @@ def _load_settings_to_config(app):
         # Load worker settings
         app.config['MAX_DESCRIPTION_WORKERS'] = settings.max_description_workers
         app.config['MAX_IMAGE_WORKERS'] = settings.max_image_workers
-        logging.info(f"Loaded worker settings: desc={settings.max_description_workers}, img={settings.max_image_workers}")
+        app.config['MAX_TASK_WORKERS'] = settings.max_task_workers
+        logging.info(f"Loaded worker settings: desc={settings.max_description_workers}, img={settings.max_image_workers}, task={settings.max_task_workers}")
 
     except Exception as e:
         logging.warning(f"Could not load settings from database: {e}")

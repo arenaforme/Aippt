@@ -116,6 +116,7 @@ export interface Settings {
   image_aspect_ratio: string;
   max_description_workers: number;
   max_image_workers: number;
+  max_task_workers: number;
   text_model?: string;
   image_model?: string;
   mineru_api_base?: string;

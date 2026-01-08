@@ -17,6 +17,7 @@ class Settings(db.Model):
     image_aspect_ratio = db.Column(db.String(10), nullable=False, default='16:9')  # 图像比例: 16:9, 4:3, 1:1
     max_description_workers = db.Column(db.Integer, nullable=False, default=5)  # 描述生成最大工作线程数
     max_image_workers = db.Column(db.Integer, nullable=False, default=8)  # 图像生成最大工作线程数
+    max_task_workers = db.Column(db.Integer, nullable=False, default=4)  # TaskManager 最大工作线程数
 
     # 新增：大模型与 MinerU 相关可视化配置（可在设置页中编辑）
     text_model = db.Column(db.String(100), nullable=True)  # 文本大模型名称（覆盖 Config.TEXT_MODEL）
@@ -39,6 +40,7 @@ class Settings(db.Model):
             'image_aspect_ratio': self.image_aspect_ratio,
             'max_description_workers': self.max_description_workers,
             'max_image_workers': self.max_image_workers,
+            'max_task_workers': self.max_task_workers,
             'text_model': self.text_model,
             'image_model': self.image_model,
             'mineru_api_base': self.mineru_api_base,

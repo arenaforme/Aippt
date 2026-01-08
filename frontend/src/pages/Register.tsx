@@ -58,8 +58,8 @@ export const Register: React.FC = () => {
       return;
     }
 
-    if (username.trim().length < 3 || username.trim().length > 50) {
-      show({ message: '用户名长度必须在 3-50 个字符之间', type: 'error' });
+    if (username.trim().length < 2 || username.trim().length > 50) {
+      show({ message: '用户名长度必须在 2-50 个字符之间', type: 'error' });
       return;
     }
 

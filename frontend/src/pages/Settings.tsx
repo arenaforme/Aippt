@@ -43,6 +43,7 @@ const initialFormData = {
   image_aspect_ratio: '16:9',
   max_description_workers: 5,
   max_image_workers: 8,
+  max_task_workers: 4,
   output_language: 'zh' as OutputLanguage,
 };
 
@@ -166,6 +167,14 @@ const settingsSections: SectionConfig[] = [
         max: 20,
         description: '同时生成图像的最大工作线程数 (1-20)，越大速度越快',
       },
+      {
+        key: 'max_task_workers',
+        label: '后台任务最大并发数',
+        type: 'number',
+        min: 1,
+        max: 20,
+        description: 'TaskManager 最大工作线程数 (1-20)，控制大纲生成等后台任务的并发能力',
+      },
     ],
   },
   {
@@ -211,6 +220,7 @@ export const Settings: React.FC = () => {
           image_aspect_ratio: response.data.image_aspect_ratio || '16:9',
           max_description_workers: response.data.max_description_workers || 5,
           max_image_workers: response.data.max_image_workers || 8,
+          max_task_workers: response.data.max_task_workers || 4,
           text_model: response.data.text_model || '',
           image_model: response.data.image_model || '',
           mineru_api_base: response.data.mineru_api_base || '',
@@ -280,6 +290,7 @@ export const Settings: React.FC = () => {
               image_aspect_ratio: response.data.image_aspect_ratio || '16:9',
               max_description_workers: response.data.max_description_workers || 5,
               max_image_workers: response.data.max_image_workers || 8,
+              max_task_workers: response.data.max_task_workers || 4,
               text_model: response.data.text_model || '',
               image_model: response.data.image_model || '',
               mineru_api_base: response.data.mineru_api_base || '',

@@ -149,8 +149,8 @@ class AuthService:
             return False, '用户名已存在', None
 
         # 验证用户名格式
-        if len(username) < 3 or len(username) > 50:
-            return False, '用户名长度必须在 3-50 个字符之间', None
+        if len(username) < 2 or len(username) > 50:
+            return False, '用户名长度必须在 2-50 个字符之间', None
 
         # 验证密码强度
         valid, error_msg = validate_password(password)

@@ -63,8 +63,8 @@ def create_user():
     if not username or not password:
         return error_response('用户名和密码不能为空', 400)
 
-    if len(username) < 3 or len(username) > 50:
-        return error_response('用户名长度必须在 3-50 个字符之间', 400)
+    if len(username) < 2 or len(username) > 50:
+        return error_response('用户名长度必须在 2-50 个字符之间', 400)
 
     # 验证密码强度
     valid, error_msg = validate_password(password)

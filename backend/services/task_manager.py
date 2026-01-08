@@ -12,16 +12,57 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+# 默认 max_workers 值，可通过数据库配置覆盖
+DEFAULT_MAX_TASK_WORKERS = 4
+
 
 class TaskManager:
     """Simple task manager using ThreadPoolExecutor"""
-    
-    def __init__(self, max_workers: int = 4):
-        """Initialize task manager"""
+
+    def __init__(self, max_workers: int = None):
+        """Initialize task manager with configurable max_workers"""
+        # 延迟初始化：如果未指定 max_workers，尝试从 Flask app.config 读取
+        if max_workers is None:
+            max_workers = self._get_max_workers_from_config()
+        self._max_workers = max_workers
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.active_tasks = {}  # task_id -> Future
         self.lock = threading.Lock()
-    
+        logger.info(f"TaskManager initialized with max_workers={max_workers}")
+
+    @staticmethod
+    def _get_max_workers_from_config() -> int:
+        """从 Flask app.config 获取 max_workers，如果不可用则返回默认值"""
+        try:
+            from flask import current_app
+            return current_app.config.get('MAX_TASK_WORKERS', DEFAULT_MAX_TASK_WORKERS)
+        except RuntimeError:
+            # 在 Flask 应用上下文外调用时返回默认值
+            return DEFAULT_MAX_TASK_WORKERS
+
+    @property
+    def max_workers(self) -> int:
+        """获取当前 max_workers 配置"""
+        return self._max_workers
+
+    def reconfigure(self, max_workers: int):
+        """
+        重新配置 TaskManager（需要等待现有任务完成）
+        注意：此方法会关闭旧的 executor 并创建新的
+        """
+        with self.lock:
+            if max_workers == self._max_workers:
+                return  # 无需变更
+
+            logger.info(f"Reconfiguring TaskManager: {self._max_workers} -> {max_workers}")
+            # 等待现有任务完成
+            self.executor.shutdown(wait=True)
+            # 创建新的 executor
+            self._max_workers = max_workers
+            self.executor = ThreadPoolExecutor(max_workers=max_workers)
+            self.active_tasks = {}
+            logger.info(f"TaskManager reconfigured with max_workers={max_workers}")
+
     def submit_task(self, task_id: str, func: Callable, *args, **kwargs):
         """Submit a background task"""
         future = self.executor.submit(func, task_id, *args, **kwargs)
@@ -48,8 +89,8 @@ class TaskManager:
         self.executor.shutdown(wait=True)
 
 
-# Global task manager instance
-task_manager = TaskManager(max_workers=4)
+# Global task manager instance (使用默认值初始化，启动后可通过 reconfigure 调整)
+task_manager = TaskManager(max_workers=DEFAULT_MAX_TASK_WORKERS)
 
 
 def generate_descriptions_task(task_id: str, project_id: str, ai_service, 

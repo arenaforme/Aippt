@@ -100,6 +100,14 @@ def update_settings():
                 )
             settings.max_image_workers = workers
 
+        if "max_task_workers" in data:
+            workers = int(data["max_task_workers"])
+            if workers < 1 or workers > 20:
+                return bad_request(
+                    "Max task workers must be between 1 and 20"
+                )
+            settings.max_task_workers = workers
+
         # Update model & MinerU configuration (optional, empty values fall back to Config)
         if "text_model" in data:
             settings.text_model = (data["text_model"] or "").strip() or None
@@ -234,7 +242,13 @@ def _sync_settings_to_config(settings: Settings):
     # Sync worker settings
     current_app.config["MAX_DESCRIPTION_WORKERS"] = settings.max_description_workers
     current_app.config["MAX_IMAGE_WORKERS"] = settings.max_image_workers
-    logger.info(f"Updated worker settings: desc={settings.max_description_workers}, img={settings.max_image_workers}")
+    current_app.config["MAX_TASK_WORKERS"] = settings.max_task_workers
+    logger.info(f"Updated worker settings: desc={settings.max_description_workers}, img={settings.max_image_workers}, task={settings.max_task_workers}")
+
+    # 动态重新配置 TaskManager（如果 max_task_workers 发生变化）
+    from services.task_manager import task_manager
+    if task_manager.max_workers != settings.max_task_workers:
+        task_manager.reconfigure(settings.max_task_workers)
 
     # Sync model & MinerU settings (optional, fall back to Config defaults if None)
     if settings.text_model:
