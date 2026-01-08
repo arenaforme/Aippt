@@ -22,6 +22,43 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.7.5',
+    date: '2026-01-08',
+    changes: [
+      { type: 'docs', description: '用户协议和会员协议新增可编辑 PPTX、PDF 转换功能免责条款' },
+    ],
+  },
+  {
+    version: 'v2.7.4',
+    date: '2026-01-08',
+    changes: [
+      { type: 'feat', description: 'TaskManager 支持动态配置，管理员可在设置页面调整后台任务并发数' },
+      { type: 'feat', description: '用户名最小长度改为 2，支持两字姓名注册' },
+    ],
+  },
+  {
+    version: 'v2.7.3',
+    date: '2026-01-07',
+    changes: [
+      { type: 'feat', description: '新增用户协议和会员协议管理功能' },
+      { type: 'fix', description: '修改下载功能权限为所有用户可用' },
+    ],
+  },
+  {
+    version: 'v2.7.2',
+    date: '2026-01-07',
+    changes: [
+      { type: 'docs', description: '更新产品截图' },
+    ],
+  },
+  {
+    version: 'v2.7.1',
+    date: '2026-01-05',
+    changes: [
+      { type: 'refactor', description: '重构 GenAI Provider 支持双模式（SDK/HTTP）' },
+    ],
+  },
+  {
     version: 'v2.7.0',
     date: '2026-01-03',
     changes: [

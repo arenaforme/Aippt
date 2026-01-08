@@ -111,16 +111,44 @@ const DefaultMembershipAgreementContent = () => (
 
     <section>
       <h3 className="font-semibold text-gray-900 mb-2">四、会员服务条款</h3>
-      <p>会员可享受更多的 PPT 生成配额、可编辑 PPTX 导出等高级功能。</p>
+      <p>会员可享受更多的 PPT 生成配额、可编辑 PPTX 导出、PDF 转可编辑 PPTX 等高级功能。</p>
     </section>
 
     <section>
-      <h3 className="font-semibold text-gray-900 mb-2">五、支付条款</h3>
+      <h3 className="font-semibold text-gray-900 mb-2">五、高级功能免责声明</h3>
+
+      <p className="mb-2"><strong>5.1 可编辑 PPTX 导出功能</strong></p>
+      <p>本功能使用 OCR（光学字符识别）和 AI 大模型技术从图片中提取文字并生成可编辑文档。由于技术限制：</p>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        <li>复杂背景、艺术字体或特殊排版的文字可能无法完全识别</li>
+        <li>部分文字可能存在识别错误或遗漏</li>
+        <li>原始字体、字号、颜色等格式可能无法完全复原，导出结果将使用系统默认字体</li>
+        <li>复杂的排版布局、动画效果可能无法保留</li>
+        <li>不同版本的演示软件（PowerPoint、WPS 等）显示效果可能存在差异</li>
+      </ul>
+
+      <p className="mb-2 mt-3"><strong>5.2 PDF 转可编辑 PPTX 功能</strong></p>
+      <p>本功能通过智能识别技术将 PDF 文档转换为可编辑的演示文稿格式。由于技术限制：</p>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        <li>PDF 中的字体可能因版权或技术原因无法嵌入，将被替换为系统默认字体</li>
+        <li>原始文档的字体样式、字号、行距等格式可能无法完全复原</li>
+        <li>复杂的页面布局、表格、图表可能无法精确还原</li>
+        <li>矢量图形可能被转换为位图，导致清晰度下降</li>
+        <li>扫描版 PDF 的文字识别可能存在误差</li>
+        <li>手写内容、特殊符号、公式等可能无法正确识别</li>
+      </ul>
+
+      <p className="mt-3"><strong>5.3 免责说明</strong></p>
+      <p>上述功能的转换结果仅供参考，用户应在使用前仔细检查并根据需要进行调整。本服务不对转换结果的准确性、完整性、格式还原度以及与原始文件的一致性承担任何责任。用户因使用转换结果而产生的任何损失，本服务不承担赔偿责任。</p>
+    </section>
+
+    <section>
+      <h3 className="font-semibold text-gray-900 mb-2">六、支付条款</h3>
       <p>本服务支持微信支付、支付宝等第三方支付方式。</p>
     </section>
 
     <section>
-      <h3 className="font-semibold text-gray-900 mb-2">六、支付风险免责</h3>
+      <h3 className="font-semibold text-gray-900 mb-2">七、支付风险免责</h3>
       <ul className="list-disc list-inside space-y-1">
         <li>因网络问题导致的支付延迟或失败，本服务不承担责任</li>
         <li>因第三方支付平台的技术问题导致的支付异常，由相应支付平台负责处理</li>
@@ -128,7 +156,7 @@ const DefaultMembershipAgreementContent = () => (
     </section>
 
     <section>
-      <h3 className="font-semibold text-gray-900 mb-2">七、其他</h3>
+      <h3 className="font-semibold text-gray-900 mb-2">八、其他</h3>
       <p>本协议的解释、效力及争议解决均适用中华人民共和国法律。</p>
     </section>
   </div>

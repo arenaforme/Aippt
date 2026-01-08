@@ -110,15 +110,29 @@ const DefaultAgreementContent = () => (
       <p className="mb-2"><strong>3.1 AI 生成内容</strong></p>
       <p>本服务生成的内容由人工智能算法自动产生，可能存在不准确、不完整或不适当的情况。用户应自行审核生成内容的准确性和适用性，并对使用生成内容承担全部责任。</p>
 
-      <p className="mb-2 mt-3"><strong>3.2 可编辑 PPTX 功能</strong></p>
+      <p className="mb-2 mt-3"><strong>3.2 可编辑 PPTX 导出功能</strong></p>
       <p>可编辑 PPTX 导出功能使用 OCR（光学字符识别）和 AI 大模型技术从图片中提取文字。由于技术限制：</p>
       <ul className="list-disc list-inside mt-2 space-y-1">
         <li>复杂背景、艺术字体或特殊排版的文字可能无法完全识别</li>
         <li>部分文字可能存在识别错误</li>
         <li>图片背景中的装饰性文字可能被误提取为正文</li>
         <li>某些文字可能因技术原因未被提取</li>
+        <li>原始字体、字号、颜色等格式可能无法完全复原，导出结果将使用系统默认字体</li>
+        <li>复杂的排版布局、动画效果可能无法保留</li>
       </ul>
-      <p className="mt-2">用户应在导出后仔细检查并修正内容，本服务不对 OCR 识别结果的准确性和完整性承担责任。</p>
+      <p className="mt-2">用户应在导出后仔细检查并修正内容，本服务不对导出结果的准确性、完整性和格式还原度承担责任。</p>
+
+      <p className="mb-2 mt-3"><strong>3.3 PDF 转可编辑 PPTX 功能</strong></p>
+      <p>PDF 转可编辑 PPTX 功能通过智能识别技术将 PDF 文档转换为可编辑的演示文稿格式。由于技术限制：</p>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        <li>PDF 中的字体可能因版权或技术原因无法嵌入，将被替换为系统默认字体</li>
+        <li>原始文档的字体样式、字号、行距等格式可能无法完全复原</li>
+        <li>复杂的页面布局、表格、图表可能无法精确还原</li>
+        <li>矢量图形可能被转换为位图，导致清晰度下降</li>
+        <li>扫描版 PDF 的文字识别可能存在误差</li>
+        <li>手写内容、特殊符号、公式等可能无法正确识别</li>
+      </ul>
+      <p className="mt-2">转换结果仅供参考，用户应自行检查并根据需要进行调整。本服务不对转换结果与原始文件的一致性承担任何责任。</p>
     </section>
 
     <section>
