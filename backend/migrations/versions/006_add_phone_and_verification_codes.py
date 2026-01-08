@@ -22,18 +22,15 @@ def upgrade() -> None:
     bind = op.get_bind()
     inspector = inspect(bind)
 
-    # 1. 添加 phone 字段到 users 表
+    # 1. 添加 phone 字段到 users 表（使用 batch 模式支持 SQLite）
     if 'users' in inspector.get_table_names():
         columns = [col['name'] for col in inspector.get_columns('users')]
         if 'phone' not in columns:
-            op.add_column('users', sa.Column(
-                'phone',
-                sa.String(20),
-                nullable=True,
-                unique=True
-            ))
-            # 创建索引
-            op.create_index('ix_users_phone', 'users', ['phone'])
+            # SQLite 不支持直接添加带约束的列，使用 batch 模式
+            with op.batch_alter_table('users') as batch_op:
+                batch_op.add_column(sa.Column('phone', sa.String(20), nullable=True))
+            # 单独创建唯一索引
+            op.create_index('ix_users_phone', 'users', ['phone'], unique=True)
 
     # 2. 创建 verification_codes 表
     if 'verification_codes' not in inspector.get_table_names():
