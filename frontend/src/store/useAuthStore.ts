@@ -10,11 +10,22 @@ import * as authApi from '@/api/auth';
 export interface User {
   id: string;
   username: string;
+  phone?: string;  // 手机号（脱敏显示）
   role: 'user' | 'admin';
   status: 'active' | 'disabled';
   must_change_password?: boolean;  // 首次登录强制修改密码标志
   created_at?: string;
   last_login_at?: string;
+  // 会员信息
+  membership?: {
+    level: 'free' | 'basic' | 'premium';
+    effective_level: 'free' | 'basic' | 'premium';
+    expires_at: string | null;
+    is_active: boolean;
+    image_quota: number;
+    premium_quota: number;
+    quota_reset_at: string | null;
+  };
 }
 
 // 认证状态接口
@@ -26,16 +37,18 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   mustChangePassword: boolean;  // 是否需要强制修改密码
+  needPhoneVerification: boolean;  // 是否需要绑定手机号
 
   // Actions
   setToken: (token: string | null) => void;
   setUser: (user: User | null) => void;
   setError: (error: string | null) => void;
   setMustChangePassword: (value: boolean) => void;
+  setNeedPhoneVerification: (value: boolean) => void;
 
   // 认证操作
   login: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
-  register: (username: string, password: string) => Promise<boolean>;
+  register: (username: string, password: string, phone: string, code: string) => Promise<boolean>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
   checkAuth: () => Promise<boolean>;
@@ -55,12 +68,14 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       error: null,
       mustChangePassword: false,
+      needPhoneVerification: false,
 
       // Setters
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
       setError: (error) => set({ error }),
       setMustChangePassword: (value) => set({ mustChangePassword: value }),
+      setNeedPhoneVerification: (value) => set({ needPhoneVerification: value }),
 
       // 登录
       login: async (username, password, rememberMe = false) => {
@@ -69,12 +84,14 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.login(username, password, rememberMe);
           if (response.data?.token && response.data?.user) {
             const user = response.data.user;
+            const needPhoneVerification = response.data.need_phone_verification || false;
             set({
               token: response.data.token,
               user: user,
               isAuthenticated: true,
               isLoading: false,
               mustChangePassword: user.must_change_password || false,
+              needPhoneVerification: needPhoneVerification,
             });
             return true;
           }
@@ -87,10 +104,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       // 注册
-      register: async (username, password) => {
+      register: async (username, password, phone, code) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await authApi.register(username, password);
+          const response = await authApi.register(username, password, phone, code);
           if (response.data?.user) {
             set({ isLoading: false });
             return true;
@@ -142,10 +159,13 @@ export const useAuthStore = create<AuthState>()(
           const response = await authApi.getCurrentUser();
           if (response.data?.user) {
             const user = response.data.user;
+            // 检查用户是否需要绑定手机号（没有手机号则需要绑定）
+            const needPhoneVerification = !user.phone;
             set({
               user: user,
               isAuthenticated: true,
               mustChangePassword: user.must_change_password || false,
+              needPhoneVerification: needPhoneVerification,
             });
             return true;
           }
@@ -171,6 +191,7 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           error: null,
           mustChangePassword: false,
+          needPhoneVerification: false,
         });
       },
     }),

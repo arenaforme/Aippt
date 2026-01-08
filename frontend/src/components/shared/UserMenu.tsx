@@ -4,7 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap } from 'lucide-react';
+import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap, User } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Modal } from './Modal';
 import { Input } from './Input';
@@ -208,6 +208,17 @@ export const UserMenu: React.FC = () => {
             >
               <Crown size={16} />
               会员中心
+            </button>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                navigate('/profile');
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+            >
+              <User size={16} />
+              个人信息
             </button>
             <button
               onClick={handleOpenPasswordModal}

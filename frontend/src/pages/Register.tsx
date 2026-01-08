@@ -3,10 +3,11 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { UserPlus, User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft } from 'lucide-react';
-import { Button, Input, Card, useToast, UserAgreementModal } from '@/components/shared';
+import { UserPlus, User, Lock, Eye, EyeOff, AlertCircle, ArrowLeft, Phone } from 'lucide-react';
+import { Button, Input, Card, useToast, UserAgreementModal, SmsCodeInput } from '@/components/shared';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getRegistrationStatus } from '@/api/auth';
+import { sendVerificationCode } from '@/api/endpoints';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -16,6 +17,8 @@ export const Register: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [allowRegistration, setAllowRegistration] = useState<boolean | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -85,15 +88,39 @@ export const Register: React.FC = () => {
       return;
     }
 
+    // 验证手机号
+    if (!phone || !/^1[3-9]\d{9}$/.test(phone)) {
+      show({ message: '请输入有效的手机号', type: 'error' });
+      return;
+    }
+
+    // 验证验证码
+    if (!code || code.length !== 6) {
+      show({ message: '请输入6位验证码', type: 'error' });
+      return;
+    }
+
     if (!agreedToTerms) {
       show({ message: '请阅读并同意用户协议', type: 'error' });
       return;
     }
 
-    const success = await register(username.trim(), password);
+    const success = await register(username.trim(), password, phone, code);
     if (success) {
       show({ message: '注册成功，请登录', type: 'success' });
       navigate('/login');
+    }
+  };
+
+  // 发送验证码处理
+  const handleSendCode = async (phoneNum: string, purpose: string) => {
+    try {
+      const response = await sendVerificationCode(phoneNum, purpose as 'register' | 'bind_phone');
+      return { success: response.success, message: response.message };
+    } catch (err: any) {
+      // 后端错误格式: { success: false, error: { code, message } }
+      const errorMsg = err.response?.data?.error?.message || err.response?.data?.message || '发送失败';
+      return { success: false, message: errorMsg };
     }
   };
 
@@ -187,6 +214,29 @@ export const Register: React.FC = () => {
               autoComplete="new-password"
             />
           </div>
+
+          {/* 手机号输入 */}
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Input
+              type="tel"
+              placeholder="手机号"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+              maxLength={11}
+              className="pl-10"
+              autoComplete="tel"
+            />
+          </div>
+
+          {/* 验证码输入 */}
+          <SmsCodeInput
+            phone={phone}
+            purpose="register"
+            onSendCode={handleSendCode}
+            value={code}
+            onChange={setCode}
+          />
 
           {/* 用户协议勾选 */}
           <div className="flex items-start gap-2">

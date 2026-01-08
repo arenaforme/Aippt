@@ -9,14 +9,16 @@ import { useAuthStore } from '@/store/useAuthStore';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  skipPhoneCheck?: boolean;  // 跳过手机号验证（用于绑定手机号页面本身）
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,
+  skipPhoneCheck = false,
 }) => {
   const location = useLocation();
-  const { isAuthenticated, user, checkAuth, isLoading } = useAuthStore();
+  const { isAuthenticated, user, checkAuth, isLoading, needPhoneVerification } = useAuthStore();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
@@ -45,6 +47,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // 未登录，跳转到登录页
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // 需要绑定手机号（跳过绑定手机号页面本身）
+  if (!skipPhoneCheck && needPhoneVerification) {
+    return <Navigate to="/bind-phone" replace />;
   }
 
   // 需要管理员权限但用户不是管理员

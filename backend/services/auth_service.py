@@ -128,13 +128,15 @@ class AuthService:
         return True, token, '登录成功', user
 
     @classmethod
-    def register(cls, username: str, password: str, ip_address: str = None) -> Tuple[bool, str, Optional[User]]:
+    def register(cls, username: str, password: str, phone: str = None,
+                 ip_address: str = None) -> Tuple[bool, str, Optional[User]]:
         """
         用户注册
 
         Args:
             username: 用户名
             password: 密码
+            phone: 手机号（已验证）
             ip_address: 客户端 IP 地址
 
         Returns:
@@ -157,8 +159,12 @@ class AuthService:
         if not valid:
             return False, error_msg, None
 
+        # 检查手机号是否已被使用
+        if phone and User.query.filter_by(phone=phone).first():
+            return False, '该手机号已被注册', None
+
         # 创建用户
-        user = User(username=username, role='user', status='active')
+        user = User(username=username, role='user', status='active', phone=phone)
         user.set_password(password)
 
         # 初始化免费套餐配额
@@ -293,3 +299,42 @@ class AuthService:
             ip_address=ip_address,
             result='success' if success else 'failure'
         )
+
+    @classmethod
+    def bind_phone(cls, user: User, phone: str,
+                   ip_address: str = None) -> Tuple[bool, str]:
+        """
+        绑定手机号
+
+        Args:
+            user: 当前用户对象
+            phone: 手机号（已验证）
+            ip_address: 客户端 IP 地址
+
+        Returns:
+            (是否成功, 消息)
+        """
+        # 检查用户是否已绑定手机号
+        if user.phone:
+            return False, '您已绑定手机号，暂不支持更换'
+
+        # 检查手机号是否已被其他用户使用
+        existing = User.query.filter_by(phone=phone).first()
+        if existing and existing.id != user.id:
+            return False, '该手机号已被其他账户绑定'
+
+        # 绑定手机号
+        user.phone = phone
+        db.session.commit()
+
+        # 记录审计日志
+        AuditLog.log(
+            user_id=user.id,
+            username=user.username,
+            action='bind_phone',
+            details=f'绑定手机号: {phone[:3]}****{phone[-4:]}',
+            ip_address=ip_address,
+            result='success'
+        )
+
+        return True, '手机号绑定成功'

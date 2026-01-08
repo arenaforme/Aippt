@@ -25,6 +25,9 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # 手机号（用于验证码验证）
+    phone = db.Column(db.String(20), unique=True, nullable=True, index=True)
+
     # 会员相关字段
     membership_level = db.Column(db.String(20), default='free', index=True)  # free/basic/premium
     membership_expires_at = db.Column(db.DateTime, nullable=True)  # 会员到期时间
@@ -110,6 +113,11 @@ class User(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'last_login_at': self.last_login_at.isoformat() if self.last_login_at else None,
         }
+        # 手机号脱敏显示（用户自己查看时）
+        if self.phone and len(self.phone) == 11:
+            data['phone'] = self.phone[:3] + '****' + self.phone[-4:]
+        else:
+            data['phone'] = self.phone
         if include_sensitive:
             data['login_attempts'] = self.login_attempts
             data['locked_until'] = self.locked_until.isoformat() if self.locked_until else None
@@ -123,8 +131,9 @@ class User(db.Model):
                 'premium_quota': self.premium_quota,
                 'quota_reset_at': self.quota_reset_at.isoformat() if self.quota_reset_at else None,
             }
-        # 管理员视图：添加扁平化的会员字段
+        # 管理员视图：添加扁平化的会员字段和完整手机号
         if for_admin:
+            data['phone'] = self.phone  # 管理员可见完整手机号
             data['membership_level'] = self.membership_level
             data['membership_expires_at'] = self.membership_expires_at.isoformat() if self.membership_expires_at else None
             data['image_quota'] = self.image_quota

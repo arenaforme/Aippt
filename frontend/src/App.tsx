@@ -9,6 +9,8 @@ import { SlidePreview } from './pages/SlidePreview';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { BindPhone } from './pages/BindPhone';
+import { Profile } from './pages/Profile';
 import { UserManagement } from './pages/UserManagement';
 import { AdminProjects } from './pages/AdminProjects';
 import { AuditLogs } from './pages/AuditLogs';
@@ -58,10 +60,14 @@ function App() {
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
+        {/* 绑定手机号路由（需要登录但跳过手机号检查） */}
+        <Route path="/bind-phone" element={<ProtectedRoute skipPhoneCheck><BindPhone /></ProtectedRoute>} />
+
         {/* 受保护路由 */}
         <Route path="/app" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute requireAdmin><Settings /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/membership" element={<ProtectedRoute><Membership /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
         <Route path="/project/:projectId/outline" element={<ProtectedRoute><OutlineEditor /></ProtectedRoute>} />

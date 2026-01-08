@@ -21,11 +21,15 @@ export const login = async (
 // 注册
 export const register = async (
   username: string,
-  password: string
+  password: string,
+  phone: string,
+  code: string
 ): Promise<ApiResponse> => {
   const response = await apiClient.post('/api/auth/register', {
     username,
     password,
+    phone,
+    code,
   });
   return response.data;
 };

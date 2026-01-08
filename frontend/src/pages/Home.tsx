@@ -5,12 +5,14 @@ import { Button, Textarea, Card, useToast, MaterialGeneratorModal, ReferenceFile
 import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
 import { listUserTemplates, type UserTemplate, uploadReferenceFile, type ReferenceFile, associateFileToProject, triggerFileParse, uploadMaterial, associateMaterialsToProject } from '@/api/endpoints';
 import { useProjectStore } from '@/store/useProjectStore';
+import { useAuthStore } from '@/store/useAuthStore';
 
 type CreationType = 'idea' | 'outline' | 'description';
 
 export const Home: React.FC = () => {
   const navigate = useNavigate();
   const { initializeProject, isGlobalLoading } = useProjectStore();
+  const { user } = useAuthStore();
   const { show, ToastContainer } = useToast();
   
   const [activeTab, setActiveTab] = useState<CreationType>('idea');
@@ -250,6 +252,21 @@ export const Home: React.FC = () => {
   // 点击回形针按钮 - 打开文件选择器
   const handlePaperclipClick = () => {
     setIsFileSelectorOpen(true);
+  };
+
+  // 点击工具按钮 - 检查会员等级
+  const handleToolsClick = () => {
+    // 管理员或高级会员可以直接访问
+    const effectiveLevel = user?.membership?.effective_level;
+    if (user?.role === 'admin' || effectiveLevel === 'premium') {
+      navigate('/tools/pdf-to-pptx');
+    } else {
+      // 非高级会员显示升级提示
+      show({
+        message: 'PDF转PPTX功能需要高级会员，请升级会员后使用',
+        type: 'info'
+      });
+    }
   };
 
   // 从选择器选择文件后的回调
@@ -500,22 +517,24 @@ export const Home: React.FC = () => {
               variant="ghost"
               size="sm"
               icon={<Wrench size={16} className="md:w-[18px] md:h-[18px]" />}
-              onClick={() => navigate('/tools/pdf-to-pptx')}
+              onClick={handleToolsClick}
               className="text-xs md:text-sm hover:bg-banana-100/60 hover:shadow-sm hover:scale-105 transition-all duration-200 font-medium"
               title="PDF 转 PPTX"
             >
               <span className="hidden md:inline">工具</span>
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Settings size={16} className="md:w-[18px] md:h-[18px]" />}
-              onClick={() => navigate('/settings')}
-              className="text-xs md:text-sm hover:bg-banana-100/60 hover:shadow-sm hover:scale-105 transition-all duration-200 font-medium"
-            >
-              <span className="hidden md:inline">设置</span>
-              <span className="sm:hidden">设</span>
-            </Button>
+            {user?.role === 'admin' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Settings size={16} className="md:w-[18px] md:h-[18px]" />}
+                onClick={() => navigate('/settings')}
+                className="text-xs md:text-sm hover:bg-banana-100/60 hover:shadow-sm hover:scale-105 transition-all duration-200 font-medium"
+              >
+                <span className="hidden md:inline">设置</span>
+                <span className="sm:hidden">设</span>
+              </Button>
+            )}
             <Button variant="ghost" size="sm" className="hidden md:inline-flex hover:bg-banana-50/50">帮助</Button>
             <UserMenu />
           </div>

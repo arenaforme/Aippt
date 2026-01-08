@@ -232,6 +232,10 @@ const debouncedUpdatePage = debounce(
           // 404错误：项目不存在，清除localStorage
           errorMessage = errorData?.error?.message || '项目不存在，可能已被删除';
           shouldClearStorage = true;
+        } else if (error.response.status === 403) {
+          // 403错误：无权访问，清除localStorage（可能是切换用户后访问了其他用户的项目）
+          errorMessage = errorData?.error?.message || '无权访问该项目';
+          shouldClearStorage = true;
         } else if (errorData?.error?.message) {
           // 从后端错误格式中提取消息
           errorMessage = errorData.error.message;

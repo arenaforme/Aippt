@@ -17,6 +17,7 @@ db = SQLAlchemy(
 from .user import User
 from .audit_log import AuditLog
 from .system_config import SystemConfig
+from .verification_code import VerificationCode
 
 # 会员系统模型
 from .membership_plan import MembershipPlan
@@ -35,7 +36,7 @@ from .settings import Settings
 
 __all__ = [
     'db',
-    'User', 'AuditLog', 'SystemConfig',
+    'User', 'AuditLog', 'SystemConfig', 'VerificationCode',
     'MembershipPlan', 'FeaturePermission', 'Order',
     'Project', 'Page', 'Task', 'UserTemplate',
     'PageImageVersion', 'Material', 'ReferenceFile', 'Settings'

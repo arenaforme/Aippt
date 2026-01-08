@@ -110,6 +110,10 @@ class Config:
     CBB_PRIVATE_KEY = os.getenv('CBB_PRIVATE_KEY', '')  # RSA私钥（Base64编码）
     CBB_PUBLIC_KEY = os.getenv('CBB_PUBLIC_KEY', '')  # RSA公钥（Base64编码）
 
+    # CBB 短信服务配置
+    SMS_SIGN_NAME = os.getenv('SMS_SIGN_NAME', 'AI演示眼')  # 短信签名
+    SMS_TEMPLATE_CODE = os.getenv('SMS_TEMPLATE_CODE', 'SMS_500770214')  # 短信模板代码
+
 
 class DevelopmentConfig(Config):
     """Development configuration"""

@@ -27,5 +27,6 @@ export { ExportProgressModal } from './ExportProgressModal';
 export { PaymentModal } from './PaymentModal';
 export { UserAgreementModal } from './UserAgreementModal';
 export { MembershipAgreementModal } from './MembershipAgreementModal';
+export { SmsCodeInput } from './SmsCodeInput';
 
 

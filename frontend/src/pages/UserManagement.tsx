@@ -3,7 +3,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight, Crown, Image, Zap, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight, Crown, Image, Zap, FileText, Phone } from 'lucide-react';
 import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu } from '@/components/shared';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, getSystemConfig, updateSystemConfig } from '@/api/endpoints';
 import * as membershipApi from '@/api/membership';
@@ -461,6 +461,7 @@ const UserTable: React.FC<{
       <thead>
         <tr className="border-b border-gray-200">
           <th className="text-left py-3 px-4 font-medium text-gray-700">用户名</th>
+          <th className="text-left py-3 px-4 font-medium text-gray-700">手机号</th>
           <th className="text-left py-3 px-4 font-medium text-gray-700">角色</th>
           <th className="text-left py-3 px-4 font-medium text-gray-700">会员等级</th>
           <th className="text-left py-3 px-4 font-medium text-gray-700">配额</th>
@@ -479,6 +480,12 @@ const UserTable: React.FC<{
                 </div>
                 <span className="font-medium">{u.username}</span>
                 {u.id === currentUserId && <span className="text-xs text-banana-600">(当前)</span>}
+              </div>
+            </td>
+            <td className="py-3 px-4">
+              <div className="flex items-center gap-1 text-sm text-gray-600">
+                <Phone size={14} className="text-gray-400" />
+                <span>{u.phone || '-'}</span>
               </div>
             </td>
             <td className="py-3 px-4">

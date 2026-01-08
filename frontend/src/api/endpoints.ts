@@ -845,6 +845,7 @@ export const resetSettings = async (): Promise<ApiResponse<Settings>> => {
 export interface AdminUser {
   id: string;
   username: string;
+  phone?: string;
   role: 'user' | 'admin';
   status: 'active' | 'disabled';
   created_at: string;
@@ -1142,5 +1143,43 @@ export const updateAgreement = async (
     `/api/admin/agreements/${type}`,
     { content }
   );
+  return response.data;
+};
+
+// ===== 短信验证码 API =====
+
+/**
+ * 发送验证码
+ */
+export const sendVerificationCode = async (
+  phone: string,
+  purpose: 'register' | 'bind_phone'
+): Promise<ApiResponse<null>> => {
+  const response = await apiClient.post<ApiResponse<null>>('/api/auth/send-code', {
+    phone,
+    purpose,
+  });
+  return response.data;
+};
+
+/**
+ * 绑定手机号
+ */
+export const bindPhone = async (
+  phone: string,
+  code: string
+): Promise<ApiResponse<{ user: any }>> => {
+  const response = await apiClient.post<ApiResponse<{ user: any }>>('/api/auth/bind-phone', {
+    phone,
+    code,
+  });
+  return response.data;
+};
+
+/**
+ * 获取个人详细信息
+ */
+export const getProfile = async (): Promise<ApiResponse<{ user: any }>> => {
+  const response = await apiClient.get<ApiResponse<{ user: any }>>('/api/auth/profile');
   return response.data;
 };

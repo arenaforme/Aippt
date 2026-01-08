@@ -4,6 +4,7 @@ Authentication Controller - 认证相关 API
 from flask import Blueprint, request, g
 from utils import success_response, error_response, login_required, get_client_ip
 from services.auth_service import AuthService
+from services.verification_code_service import verification_service
 from models import SystemConfig
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -38,9 +39,13 @@ def login():
     if not success:
         return error_response('LOGIN_FAILED', message, 401)
 
+    # 检查用户是否需要绑定手机号
+    need_phone_verification = not user.phone
+
     return success_response({
         'token': token,
-        'user': user.to_dict()
+        'user': user.to_dict(),
+        'need_phone_verification': need_phone_verification
     }, message)
 
 
@@ -49,7 +54,7 @@ def register():
     """
     用户注册
     POST /api/auth/register
-    Body: { username, password }
+    Body: { username, password, phone, code }
     """
     data = request.get_json()
     if not data:
@@ -57,14 +62,25 @@ def register():
 
     username = data.get('username', '').strip()
     password = data.get('password', '')
+    phone = data.get('phone', '').strip()
+    code = data.get('code', '').strip()
 
     if not username or not password:
         return error_response('INVALID_CREDENTIALS', '用户名和密码不能为空', 400)
+
+    if not phone or not code:
+        return error_response('INVALID_REQUEST', '手机号和验证码不能为空', 400)
+
+    # 验证验证码
+    valid, msg = verification_service.verify_code(phone, code, 'register')
+    if not valid:
+        return error_response('VERIFICATION_FAILED', msg, 400)
 
     ip_address = get_client_ip()
     success, message, user = AuthService.register(
         username=username,
         password=password,
+        phone=phone,
         ip_address=ip_address
     )
 
@@ -97,7 +113,7 @@ def get_current_user():
     获取当前用户信息
     GET /api/auth/me
     """
-    return success_response({'user': g.current_user.to_dict()})
+    return success_response({'user': g.current_user.to_dict(include_membership=True)})
 
 
 @auth_bp.route('/registration-status', methods=['GET'])
@@ -160,3 +176,79 @@ def change_password():
         return error_response('CHANGE_PASSWORD_FAILED', message, 400)
 
     return success_response(None, message)
+
+
+@auth_bp.route('/send-code', methods=['POST'])
+def send_verification_code():
+    """
+    发送验证码
+    POST /api/auth/send-code
+    Body: { phone, purpose }
+    purpose: register（注册）或 bind_phone（绑定手机号）
+    """
+    data = request.get_json()
+    if not data:
+        return error_response('INVALID_REQUEST', '请求数据不能为空', 400)
+
+    phone = data.get('phone', '').strip()
+    purpose = data.get('purpose', 'register')
+
+    if purpose not in ['register', 'bind_phone']:
+        return error_response('INVALID_REQUEST', '无效的用途类型', 400)
+
+    ip_address = get_client_ip()
+    success, message = verification_service.send_code(phone, purpose, ip_address)
+
+    if not success:
+        return error_response('SEND_CODE_FAILED', message, 400)
+
+    return success_response(None, message)
+
+
+@auth_bp.route('/bind-phone', methods=['POST'])
+@login_required
+def bind_phone():
+    """
+    绑定手机号（已登录用户）
+    POST /api/auth/bind-phone
+    Body: { phone, code }
+    """
+    data = request.get_json()
+    if not data:
+        return error_response('INVALID_REQUEST', '请求数据不能为空', 400)
+
+    phone = data.get('phone', '').strip()
+    code = data.get('code', '').strip()
+
+    if not phone or not code:
+        return error_response('INVALID_REQUEST', '手机号和验证码不能为空', 400)
+
+    # 验证验证码
+    valid, msg = verification_service.verify_code(phone, code, 'bind_phone')
+    if not valid:
+        return error_response('VERIFICATION_FAILED', msg, 400)
+
+    ip_address = get_client_ip()
+    success, message = AuthService.bind_phone(
+        user=g.current_user,
+        phone=phone,
+        ip_address=ip_address
+    )
+
+    if not success:
+        return error_response('BIND_PHONE_FAILED', message, 400)
+
+    return success_response({'user': g.current_user.to_dict()}, message)
+
+
+@auth_bp.route('/profile', methods=['GET'])
+@login_required
+def get_profile():
+    """
+    获取当前用户详细信息
+    GET /api/auth/profile
+    """
+    user = g.current_user
+    return success_response({
+        'user': user.to_dict(include_membership=True)
+    })
