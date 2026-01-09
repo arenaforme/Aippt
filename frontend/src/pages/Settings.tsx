@@ -37,8 +37,7 @@ const initialFormData = {
   text_model: '',
   image_model: '',
   image_caption_model: '',
-  mineru_api_base: '',
-  mineru_token: '',
+  docling_api_base: '',
   image_resolution: '2K',
   image_aspect_ratio: '16:9',
   max_description_workers: 5,
@@ -109,24 +108,15 @@ const settingsSections: SectionConfig[] = [
     ],
   },
   {
-    title: 'MinerU 配置',
+    title: 'Docling 配置',
     icon: <FileText size={20} />,
     fields: [
       {
-        key: 'mineru_api_base',
-        label: 'MinerU API Base',
+        key: 'docling_api_base',
+        label: 'Docling API Base',
         type: 'text',
-        placeholder: '留空使用环境变量配置 (如: https://mineru.net)',
-        description: 'MinerU 服务地址，用于解析参考文件',
-      },
-      {
-        key: 'mineru_token',
-        label: 'MinerU Token',
-        type: 'password',
-        placeholder: '输入新的 MinerU Token',
-        sensitiveField: true,
-        lengthKey: 'mineru_token_length',
-        description: '留空则保持当前设置不变，输入新值则更新',
+        placeholder: '留空使用环境变量配置 (如: http://127.0.0.1:5004)',
+        description: 'Docling 服务地址，用于解析参考文件（PDF/DOCX等）',
       },
     ],
   },
@@ -223,8 +213,7 @@ export const Settings: React.FC = () => {
           max_task_workers: response.data.max_task_workers || 4,
           text_model: response.data.text_model || '',
           image_model: response.data.image_model || '',
-          mineru_api_base: response.data.mineru_api_base || '',
-          mineru_token: '',
+          docling_api_base: response.data.docling_api_base || '',
           image_caption_model: response.data.image_caption_model || '',
           output_language: response.data.output_language || 'zh',
         });
@@ -243,7 +232,7 @@ export const Settings: React.FC = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { api_key, mineru_token, ...otherData } = formData;
+      const { api_key, ...otherData } = formData;
       const payload: Parameters<typeof api.updateSettings>[0] = {
         ...otherData,
       };
@@ -252,15 +241,11 @@ export const Settings: React.FC = () => {
         payload.api_key = api_key;
       }
 
-      if (mineru_token) {
-        payload.mineru_token = mineru_token;
-      }
-
       const response = await api.updateSettings(payload);
       if (response.data) {
         setSettings(response.data);
         show({ message: '设置保存成功', type: 'success' });
-        setFormData(prev => ({ ...prev, api_key: '', mineru_token: '' }));
+        setFormData(prev => ({ ...prev, api_key: '' }));
       }
     } catch (error: any) {
       console.error('保存设置失败:', error);
@@ -293,8 +278,7 @@ export const Settings: React.FC = () => {
               max_task_workers: response.data.max_task_workers || 4,
               text_model: response.data.text_model || '',
               image_model: response.data.image_model || '',
-              mineru_api_base: response.data.mineru_api_base || '',
-              mineru_token: '',
+              docling_api_base: response.data.docling_api_base || '',
               image_caption_model: response.data.image_caption_model || '',
               output_language: response.data.output_language || 'zh',
             });

@@ -46,6 +46,20 @@ services:
     networks:
       - banana-slides-network
 
+  # Docling 文档解析服务
+  docling:
+    image: ghcr.io/docling-project/docling-serve-cpu:latest
+    container_name: banana-slides-docling
+    ports:
+      # 仅用于调试，生产环境可移除
+      - "5004:5001"
+    environment:
+      # 禁用 UI 以减少资源占用
+      - DOCLING_SERVE_ENABLE_UI=0
+    restart: unless-stopped
+    networks:
+      - banana-slides-network
+
 networks:
   banana-slides-network:
     driver: bridge

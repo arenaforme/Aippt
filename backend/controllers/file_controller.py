@@ -178,6 +178,40 @@ def serve_mineru_file(extract_id, filepath):
         return error_response('SERVER_ERROR', str(e), 500)
 
 
+@file_bp.route('/docling/<extract_id>/<path:filepath>', methods=['GET'])
+def serve_docling_file(extract_id, filepath):
+    """
+    GET /files/docling/{extract_id}/{filepath} - Serve Docling extracted files.
+
+    Args:
+        extract_id: Extract UUID
+        filepath: Relative file path within the extract
+    """
+    try:
+        root_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docling_files', extract_id)
+        full_path = Path(root_dir) / filepath
+
+        # This prevents path traversal attacks
+        resolved_root_dir = Path(root_dir).resolve()
+
+        try:
+            # Check if the path is trying to escape the root directory
+            resolved_full_path = full_path.resolve()
+            if not str(resolved_full_path).startswith(str(resolved_root_dir)):
+                return error_response('INVALID_PATH', 'Invalid file path', 403)
+        except Exception:
+            # If we can't resolve the path at all, it's invalid
+            return error_response('INVALID_PATH', 'Invalid file path', 403)
+
+        # Check if file exists
+        if full_path.exists():
+            return send_from_directory(str(full_path.parent), full_path.name)
+
+        return not_found('File')
+    except Exception as e:
+        return error_response('SERVER_ERROR', str(e), 500)
+
+
 @file_bp.route('/tools/exports/<filename>', methods=['GET'])
 @login_required
 @feature_required('download', consume_quota=False)

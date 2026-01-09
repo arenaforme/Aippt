@@ -19,11 +19,10 @@ class Settings(db.Model):
     max_image_workers = db.Column(db.Integer, nullable=False, default=8)  # 图像生成最大工作线程数
     max_task_workers = db.Column(db.Integer, nullable=False, default=4)  # TaskManager 最大工作线程数
 
-    # 新增：大模型与 MinerU 相关可视化配置（可在设置页中编辑）
+    # 新增：大模型与 Docling 相关可视化配置（可在设置页中编辑）
     text_model = db.Column(db.String(100), nullable=True)  # 文本大模型名称（覆盖 Config.TEXT_MODEL）
     image_model = db.Column(db.String(100), nullable=True)  # 图片大模型名称（覆盖 Config.IMAGE_MODEL）
-    mineru_api_base = db.Column(db.String(255), nullable=True)  # MinerU 服务地址（覆盖 Config.MINERU_API_BASE）
-    mineru_token = db.Column(db.String(500), nullable=True)  # MinerU API Token（覆盖 Config.MINERU_TOKEN）
+    docling_api_base = db.Column(db.String(255), nullable=True)  # Docling 服务地址（覆盖 Config.DOCLING_API_BASE）
     image_caption_model = db.Column(db.String(100), nullable=True)  # 图片识别模型（覆盖 Config.IMAGE_CAPTION_MODEL）
     output_language = db.Column(db.String(10), nullable=False, default='zh')  # 输出语言偏好（zh, en, ja, auto）
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -43,8 +42,7 @@ class Settings(db.Model):
             'max_task_workers': self.max_task_workers,
             'text_model': self.text_model,
             'image_model': self.image_model,
-            'mineru_api_base': self.mineru_api_base,
-            'mineru_token_length': len(self.mineru_token) if self.mineru_token else 0,
+            'docling_api_base': self.docling_api_base,
             'image_caption_model': self.image_caption_model,
             'output_language': self.output_language,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -83,8 +81,7 @@ class Settings(db.Model):
                 max_image_workers=Config.MAX_IMAGE_WORKERS,
                 text_model=Config.TEXT_MODEL,
                 image_model=Config.IMAGE_MODEL,
-                mineru_api_base=Config.MINERU_API_BASE,
-                mineru_token=Config.MINERU_TOKEN,
+                docling_api_base=Config.DOCLING_API_BASE,
                 image_caption_model=Config.IMAGE_CAPTION_MODEL,
                 output_language='zh',  # 默认中文
             )

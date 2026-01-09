@@ -111,11 +111,16 @@ class GenAIImageProvider(ImageProvider):
             contents.append(prompt)
 
             # 调用 SDK
+            logger.info(f"SDK config - aspect_ratio: {aspect_ratio}, resolution: {resolution}")
             response = self.client.models.generate_content(
                 model=self.model,
                 contents=contents,
                 config=types.GenerateContentConfig(
                     response_modalities=["TEXT", "IMAGE"],
+                    image_config=types.ImageConfig(
+                        aspect_ratio=aspect_ratio,
+                        image_size=resolution,
+                    ),
                 ),
             )
 
@@ -215,13 +220,23 @@ class GenAIImageProvider(ImageProvider):
             # 解析响应
             data = response.json()
 
-            # 调试：记录响应结构
+            # 调试：记录完整响应结构
             logger.info(f"API Response keys: {data.keys()}")
-            if "candidates" in data:
-                logger.info(f"Candidates count: {len(data['candidates'])}")
 
-            # 从响应中提取图片
-            candidates = data.get("candidates", [])
+            # 兼容第三方 API 的包装格式 {"code": ..., "data": ..., "msg": ...}
+            if "code" in data and "data" in data:
+                logger.info(f"Third-party API format detected - code: {data.get('code')}, msg: {data.get('msg')}")
+                if data.get("code") != 0:
+                    raise ValueError(f"Third-party API error: code={data.get('code')}, msg={data.get('msg')}")
+                # 从 data 字段中提取实际内容
+                actual_data = data.get("data", {})
+                logger.info(f"Actual data keys: {actual_data.keys() if isinstance(actual_data, dict) else type(actual_data)}")
+                candidates = actual_data.get("candidates", []) if isinstance(actual_data, dict) else []
+            else:
+                # Google 原生格式
+                if "candidates" in data:
+                    logger.info(f"Google format - Candidates count: {len(data['candidates'])}")
+                candidates = data.get("candidates", [])
             if not candidates:
                 raise ValueError("API response has no candidates")
 

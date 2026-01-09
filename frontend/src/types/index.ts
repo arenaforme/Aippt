@@ -119,8 +119,7 @@ export interface Settings {
   max_task_workers: number;
   text_model?: string;
   image_model?: string;
-  mineru_api_base?: string;
-  mineru_token_length: number;
+  docling_api_base?: string;
   image_caption_model?: string;
   output_language: 'zh' | 'en' | 'ja' | 'auto';
   created_at?: string;

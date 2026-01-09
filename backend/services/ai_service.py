@@ -113,14 +113,14 @@ class AIService:
         # 匹配 markdown 图片语法: ![](url) 或 ![alt](url)
         pattern = r'!\[.*?\]\((.*?)\)'
         matches = re.findall(pattern, text)
-        
-        # 过滤掉空字符串，支持 http/https URL 和 /files/mineru/ 开头的本地路径
+
+        # 过滤掉空字符串，支持 http/https URL 和 /files/ 开头的本地路径
         urls = []
         for url in matches:
             url = url.strip()
-            if url and (url.startswith('http://') or url.startswith('https://') or url.startswith('/files/mineru/')):
+            if url and (url.startswith('http://') or url.startswith('https://') or url.startswith('/files/')):
                 urls.append(url)
-        
+
         return urls
     
     @staticmethod
@@ -198,7 +198,36 @@ class AIService:
         
         matched_path = find_mineru_file_with_prefix(mineru_path)
         return str(matched_path) if matched_path else None
-    
+
+    @staticmethod
+    def _convert_docling_path_to_local(docling_path: str) -> Optional[str]:
+        """
+        将 /files/docling/{extract_id}/{filename} 格式的路径转换为本地文件系统路径
+
+        Args:
+            docling_path: Docling URL 路径，格式为 /files/docling/{extract_id}/{filename}
+
+        Returns:
+            本地文件系统路径，如果转换失败则返回 None
+        """
+        from flask import current_app
+
+        # 解析路径: /files/docling/{extract_id}/{filename}
+        parts = docling_path.split('/')
+        if len(parts) < 4 or parts[1] != 'files' or parts[2] != 'docling':
+            return None
+
+        extract_id = parts[3]
+        filename = '/'.join(parts[4:]) if len(parts) > 4 else ''
+
+        if not extract_id or not filename:
+            return None
+
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        local_path = os.path.join(upload_folder, 'docling_files', extract_id, filename)
+
+        return local_path if os.path.exists(local_path) else None
+
     @staticmethod
     def download_image_from_url(url: str) -> Optional[Image.Image]:
         """
@@ -422,6 +451,14 @@ class AIService:
                                 logger.debug(f"Loaded MinerU image from local path: {local_path}")
                             else:
                                 logger.warning(f"MinerU image file not found (with prefix matching): {ref_img}, skipping...")
+                        elif ref_img.startswith('/files/docling/'):
+                            # Docling 本地文件路径，直接转换为文件系统路径
+                            local_path = self._convert_docling_path_to_local(ref_img)
+                            if local_path and os.path.exists(local_path):
+                                ref_images.append(Image.open(local_path))
+                                logger.debug(f"Loaded Docling image from local path: {local_path}")
+                            else:
+                                logger.warning(f"Docling image file not found: {ref_img}, skipping...")
                         else:
                             logger.warning(f"Invalid image reference: {ref_img}, skipping...")
             

@@ -58,9 +58,10 @@ class Config:
     TEXT_MODEL = os.getenv('TEXT_MODEL', 'gemini-3-flash-preview')
     IMAGE_MODEL = os.getenv('IMAGE_MODEL', 'gemini-3-pro-image-preview')
 
-    # MinerU 文件解析服务配置
-    MINERU_TOKEN = os.getenv('MINERU_TOKEN', '')
-    MINERU_API_BASE = os.getenv('MINERU_API_BASE', 'https://mineru.net')
+    # Docling 文件解析服务配置
+    DOCLING_API_BASE = os.getenv('DOCLING_API_BASE', 'http://127.0.0.1:5004')
+    # 文件解析大小限制（字节），默认 50MB
+    FILE_PARSE_MAX_SIZE = int(os.getenv('FILE_PARSE_MAX_SIZE', str(50 * 1024 * 1024)))
 
     # 百度 OCR 配置（用于可编辑 PPT 导出）
     BAIDU_OCR_API_KEY = os.getenv('BAIDU_OCR_API_KEY', '')

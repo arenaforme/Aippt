@@ -178,8 +178,7 @@ def reset_settings():
         settings.api_key = default_api_key
         settings.text_model = Config.TEXT_MODEL
         settings.image_model = Config.IMAGE_MODEL
-        settings.mineru_api_base = Config.MINERU_API_BASE
-        settings.mineru_token = Config.MINERU_TOKEN
+        settings.docling_api_base = Config.DOCLING_API_BASE
         settings.image_caption_model = Config.IMAGE_CAPTION_MODEL
         settings.output_language = 'zh'  # 重置为默认中文
         settings.image_resolution = Config.DEFAULT_RESOLUTION
@@ -250,19 +249,16 @@ def _sync_settings_to_config(settings: Settings):
     if task_manager.max_workers != settings.max_task_workers:
         task_manager.reconfigure(settings.max_task_workers)
 
-    # Sync model & MinerU settings (optional, fall back to Config defaults if None)
+    # Sync model & Docling settings (optional, fall back to Config defaults if None)
     if settings.text_model:
         current_app.config["TEXT_MODEL"] = settings.text_model
         logger.info(f"Updated TEXT_MODEL to: {settings.text_model}")
     if settings.image_model:
         current_app.config["IMAGE_MODEL"] = settings.image_model
         logger.info(f"Updated IMAGE_MODEL to: {settings.image_model}")
-    if settings.mineru_api_base:
-        current_app.config["MINERU_API_BASE"] = settings.mineru_api_base
-        logger.info(f"Updated MINERU_API_BASE to: {settings.mineru_api_base}")
-    if settings.mineru_token is not None:
-        current_app.config["MINERU_TOKEN"] = settings.mineru_token
-        logger.info("Updated MINERU_TOKEN from settings")
+    if settings.docling_api_base:
+        current_app.config["DOCLING_API_BASE"] = settings.docling_api_base
+        logger.info(f"Updated DOCLING_API_BASE to: {settings.docling_api_base}")
     if settings.image_caption_model:
         current_app.config["IMAGE_CAPTION_MODEL"] = settings.image_caption_model
         logger.info(f"Updated IMAGE_CAPTION_MODEL to: {settings.image_caption_model}")

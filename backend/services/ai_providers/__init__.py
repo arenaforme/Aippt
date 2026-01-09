@@ -25,13 +25,13 @@ import logging
 from typing import Tuple, Type
 
 from .text import TextProvider, GenAITextProvider, OpenAITextProvider
-from .image import ImageProvider, GenAIImageProvider, OpenAIImageProvider
+from .image import ImageProvider, GenAIImageProvider, OpenAIImageProvider, GrsaiImageProvider
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     'TextProvider', 'GenAITextProvider', 'OpenAITextProvider',
-    'ImageProvider', 'GenAIImageProvider', 'OpenAIImageProvider',
+    'ImageProvider', 'GenAIImageProvider', 'OpenAIImageProvider', 'GrsaiImageProvider',
     'get_text_provider', 'get_image_provider', 'get_provider_format'
 ]
 
@@ -154,19 +154,33 @@ def get_text_provider(model: str = "gemini-3-flash-preview") -> TextProvider:
 def get_image_provider(model: str = "gemini-3-pro-image-preview") -> ImageProvider:
     """
     Factory function to get image generation provider based on configuration
-    
+
+    Provider selection logic:
+        1. If model starts with "nano-banana-" → GrsaiImageProvider (custom SDK)
+        2. If provider_format == "openai" → OpenAIImageProvider
+        3. Otherwise → GenAIImageProvider (Google SDK or HTTP)
+
     Args:
         model: Model name to use
-        
+
     Returns:
-        ImageProvider instance (GenAIImageProvider or OpenAIImageProvider)
-        
+        ImageProvider instance
+
     Note:
-        OpenAI format does NOT support 4K resolution, only 1K is available.
-        If you need higher resolution images, use Gemini format.
+        - GrsaiImageProvider supports 1K/2K/4K resolution via custom SDK
+        - OpenAI format only supports 1K resolution
+        - GenAI format supports 1K/2K/4K via Google SDK
     """
     provider_format, api_key, api_base = _get_provider_config()
-    
+
+    # 检查是否使用 Grsai 自定义 SDK（nano-banana 系列模型）
+    if model.startswith("nano-banana"):
+        logger.info(
+            f"Using Grsai custom SDK for image generation, "
+            f"model: {model}, api_base: {api_base}"
+        )
+        return GrsaiImageProvider(api_key=api_key, api_base=api_base, model=model)
+
     if provider_format == 'openai':
         logger.info(f"Using OpenAI format for image generation, model: {model}")
         logger.warning("OpenAI format only supports 1K resolution, 4K is not available")

@@ -1,15 +1,16 @@
 """
-File Parser Service - handles file parsing using MinerU service and image captioning
+File Parser Service - handles file parsing using Docling service and image captioning
 """
 import os
 import re
 import time
 import logging
-import zipfile
+import uuid
 import io
 import base64
 import requests
 from typing import Optional, List
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from PIL import Image
 from markitdown import MarkItDown
@@ -48,38 +49,37 @@ def _get_ai_provider_format(provider_format: str = None) -> str:
 
 
 class FileParserService:
-    """Service for parsing files using MinerU and enhancing with image captions"""
-    
-    def __init__(self, mineru_token: str, mineru_api_base: str = "https://mineru.net",
+    """Service for parsing files using Docling and enhancing with image captions"""
+
+    def __init__(self, docling_api_base: str = "http://127.0.0.1:5004",
+                 file_parse_max_size: int = 50 * 1024 * 1024,
                  google_api_key: str = "", google_api_base: str = "",
                  openai_api_key: str = "", openai_api_base: str = "",
                  image_caption_model: str = "gemini-3-flash-preview",
                  provider_format: str = None):
         """
         Initialize the file parser service
-        
+
         Args:
-            mineru_token: MinerU API token
-            mineru_api_base: MinerU API base URL
-            google_api_key: Google Gemini API key for image captioning (used when AI_PROVIDER_FORMAT=gemini)
+            docling_api_base: Docling API base URL
+            file_parse_max_size: Maximum file size for parsing (bytes), default 50MB
+            google_api_key: Google Gemini API key for image captioning
             google_api_base: Google Gemini API base URL
-            openai_api_key: OpenAI API key for image captioning (used when AI_PROVIDER_FORMAT=openai)
+            openai_api_key: OpenAI API key for image captioning
             openai_api_base: OpenAI API base URL
             image_caption_model: Model to use for image captioning
-            provider_format: AI provider format ('gemini' or 'openai'). If not provided, reads from environment variable.
+            provider_format: AI provider format ('gemini' or 'openai')
         """
-        self.mineru_token = mineru_token
-        self.mineru_api_base = mineru_api_base
-        self.get_upload_url_api = f"{mineru_api_base}/api/v4/file-urls/batch"
-        self.get_result_api_template = f"{mineru_api_base}/api/v4/extract-results/batch/{{}}"
-        
+        self.docling_api_base = docling_api_base.rstrip('/')
+        self.file_parse_max_size = file_parse_max_size
+
         # Store config for lazy initialization
         self._google_api_key = google_api_key
         self._google_api_base = google_api_base
         self._openai_api_key = openai_api_key
         self._openai_api_base = openai_api_base
         self.image_caption_model = image_caption_model
-        
+
         # Clients will be initialized lazily based on AI_PROVIDER_FORMAT
         self._gemini_client = None
         self._openai_client = None
@@ -115,72 +115,64 @@ class FileParserService:
     
     def parse_file(self, file_path: str, filename: str) -> tuple[Optional[str], Optional[str], Optional[str], int]:
         """
-        Parse a file using MinerU service and enhance with image captions
-        
+        Parse a file using Docling service and enhance with image captions
+
         Args:
             file_path: Path to the file to parse
             filename: Original filename
-            
+
         Returns:
-            Tuple of (batch_id, markdown_content, error_message, failed_image_count)
-            - batch_id: MinerU batch ID (for tracking, None for text files)
+            Tuple of (task_id, markdown_content, error_message, failed_image_count)
+            - task_id: Task ID for tracking (None for text files)
             - markdown_content: Parsed markdown with enhanced image descriptions
             - error_message: Error message if parsing failed
             - failed_image_count: Number of images that failed to generate captions
         """
         try:
-            # Check if it's a plain text file that doesn't need MinerU parsing
+            # Check file size limit
+            file_size = os.path.getsize(file_path)
+            if file_size > self.file_parse_max_size:
+                max_mb = self.file_parse_max_size / (1024 * 1024)
+                error_msg = f"文件大小超过限制：{file_size / (1024 * 1024):.1f}MB > {max_mb:.0f}MB"
+                logger.error(error_msg)
+                return None, None, error_msg, 0
+
+            # Check if it's a plain text file that doesn't need Docling parsing
             file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
-            
+
             if file_ext in ['txt', 'md', 'markdown']:
                 logger.info(f"File {filename} is a plain text file, reading directly...")
                 return self._parse_text_file(file_path, filename)
-            
+
             # Check if it's a spreadsheet file (xlsx, csv) - use markitdown
             if file_ext in ['xlsx', 'xls', 'csv']:
                 logger.info(f"File {filename} is a spreadsheet file, using markitdown...")
                 return self._parse_spreadsheet_file(file_path, filename)
-            
-            # For other file types, use MinerU service
-            logger.info(f"File {filename} requires MinerU parsing...")
-            
-            # Step 1: Get upload URL
-            logger.info(f"Step 1/4: Requesting upload URL for {filename}...")
-            batch_id, upload_url, error = self._get_upload_url(filename)
+
+            # For other file types (pdf, docx, pptx), use Docling service
+            logger.info(f"File {filename} requires Docling parsing...")
+
+            # Parse with Docling
+            logger.info(f"Step 1/2: Parsing file with Docling...")
+            markdown_content, error = self._parse_with_docling(file_path, filename)
             if error:
                 return None, None, error, 0
-            
-            logger.info(f"Got upload URL. Batch ID: {batch_id}")
-            
-            # Step 2: Upload file
-            logger.info(f"Step 2/4: Uploading file {filename}...")
-            error = self._upload_file(file_path, upload_url)
-            if error:
-                return batch_id, None, error, 0
-            
-            logger.info("File uploaded successfully.")
-            
-            # Step 3: Poll for parsing result
-            logger.info("Step 3/4: Waiting for parsing to complete...")
-            markdown_content, error = self._poll_result(batch_id)
-            if error:
-                return batch_id, None, error, 0
-            
+
             logger.info("File parsed successfully.")
-            
-            # Step 4: Enhance markdown with image captions
+
+            # Step 2: Enhance markdown with image captions
             if markdown_content and self._can_generate_captions():
-                logger.info("Step 4/4: Enhancing markdown with image captions...")
+                logger.info("Step 2/2: Enhancing markdown with image captions...")
                 enhanced_content, failed_count = self._enhance_markdown_with_captions(markdown_content)
                 if failed_count > 0:
-                    logger.warning(f"Markdown enhanced with image captions, but {failed_count} images failed to generate captions.")
+                    logger.warning(f"Markdown enhanced, but {failed_count} images failed to generate captions.")
                 else:
                     logger.info("Markdown enhanced with image captions (all images succeeded).")
-                return batch_id, enhanced_content, None, failed_count
+                return None, enhanced_content, None, failed_count
             else:
-                logger.info("Skipping image caption enhancement (no Gemini client).")
-                return batch_id, markdown_content, None, 0
-            
+                logger.info("Skipping image caption enhancement (no AI client configured).")
+                return None, markdown_content, None, 0
+
         except Exception as e:
             error_msg = f"Unexpected error during file parsing: {str(e)}"
             logger.error(error_msg, exc_info=True)
@@ -271,226 +263,141 @@ class FileParserService:
             logger.error(error_msg, exc_info=True)
             return None, None, error_msg, 0
     
-    def _get_upload_url(self, filename: str) -> tuple[Optional[str], Optional[str], Optional[str]]:
-        """Get upload URL from MinerU"""
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.mineru_token}"
-        }
-        
-        upload_data = {
-            "files": [{"name": filename}],
-            "model_version": "vlm"  # or "pipeline"
-        }
-        
+    def _parse_with_docling(self, file_path: str, filename: str) -> tuple[Optional[str], Optional[str]]:
+        """
+        Parse file using Docling service
+
+        Args:
+            file_path: Path to the file to parse
+            filename: Original filename
+
+        Returns:
+            Tuple of (markdown_content, error_message)
+        """
         try:
-            response = requests.post(
-                self.get_upload_url_api,
-                headers=headers,
-                json=upload_data,
-                timeout=30
-            )
-            response.raise_for_status()
-            result = response.json()
-            
-            if result.get("code") != 0:
-                error_msg = f"Failed to get upload URL: {result.get('msg')}"
-                logger.error(error_msg)
-                return None, None, error_msg
-            
-            batch_id = result["data"]["batch_id"]
-            upload_url = result["data"]["file_urls"][0]
-            return batch_id, upload_url, None
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Network error while requesting upload URL: {str(e)}"
-            logger.error(error_msg)
-            return None, None, error_msg
-    
-    def _upload_file(self, file_path: str, upload_url: str) -> Optional[str]:
-        """Upload file to MinerU"""
-        try:
+            # Prepare multipart form data
             with open(file_path, 'rb') as f:
-                response = requests.put(
-                    upload_url,
-                    data=f,
-                    headers={"Authorization": None},  # Remove auth for upload
-                    timeout=300  # 5 minutes timeout for large files
+                files = {'files': (filename, f, 'application/octet-stream')}
+                data = {
+                    'to_formats': 'md',
+                    'do_ocr': 'false',
+                    'image_export_mode': 'embedded',
+                    'pdf_backend': 'dlparse_v4'
+                }
+
+                # Call Docling API (sync endpoint)
+                response = requests.post(
+                    f"{self.docling_api_base}/v1/convert/file",
+                    files=files,
+                    data=data,
+                    timeout=300  # 5 minutes for large files
                 )
-                response.raise_for_status()
-            return None
-            
-        except requests.exceptions.RequestException as e:
-            error_msg = f"File upload failed: {str(e)}"
-            logger.error(error_msg)
-            return error_msg
-        except IOError as e:
-            error_msg = f"Failed to read file: {str(e)}"
-            logger.error(error_msg)
-            return error_msg
-    
-    def _poll_result(self, batch_id: str, max_wait_time: int = 600) -> tuple[Optional[str], Optional[str]]:
-        """Poll for parsing result"""
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.mineru_token}"
-        }
-        
-        result_url = self.get_result_api_template.format(batch_id)
-        start_time = time.time()
-        
-        while True:
-            if time.time() - start_time > max_wait_time:
-                error_msg = f"Parsing timeout after {max_wait_time} seconds"
+
+            if response.status_code != 200:
+                error_msg = f"Docling API error: {response.status_code} - {response.text[:200]}"
                 logger.error(error_msg)
                 return None, error_msg
-            
-            try:
-                response = requests.get(result_url, headers=headers, timeout=30)
-                response.raise_for_status()
-                task_info = response.json()
-                
-                if task_info.get("code") != 0:
-                    error_msg = f"Failed to query task status: {task_info.get('msg')}"
-                    logger.error(error_msg)
-                    return None, error_msg
-                
-                task_status = task_info["data"]["extract_result"][0]["state"]
-                
-                if task_status == "done":
-                    logger.info("File parsing completed!")
-                    full_zip_url = task_info["data"]["extract_result"][0]["full_zip_url"]
-                    # Download and extract markdown
-                    return self._download_markdown(full_zip_url)
-                elif task_status == "failed":
-                    err_msg = task_info["data"]["extract_result"][0].get("err_msg", "Unknown error")
-                    error_msg = f"File parsing failed: {err_msg}"
-                    logger.error(error_msg)
-                    return None, error_msg
-                else:
-                    logger.debug(f"Current task status: {task_status}, waiting...")
-                    time.sleep(2)  # Wait 2 seconds before next poll
-                    
-            except requests.exceptions.RequestException as e:
-                logger.warning(f"Network error while polling result: {str(e)}, retrying...")
-                time.sleep(2)
-    
-    def _download_markdown(self, zip_url: str) -> tuple[Optional[str], Optional[str]]:
-        """Download and extract markdown from result zip, save images to local server"""
-        try:
-            response = requests.get(zip_url, timeout=60)
-            response.raise_for_status()
-            
-            # Generate unique directory name for this extraction
-            import uuid
-            extract_id = str(uuid.uuid4())[:8]
-            
-            # Get upload folder from Flask config (we'll need to pass this)
-            # For now, use a hardcoded path relative to project root
-            import os
-            from pathlib import Path
-            
-            # Navigate to project root (assuming this file is in backend/services/)
-            current_file = Path(__file__).resolve()
-            backend_dir = current_file.parent.parent
-            project_root = backend_dir.parent
-            
-            # Create directory for mineru extracts
-            mineru_storage = project_root / 'uploads' / 'mineru_files' / extract_id
-            mineru_storage.mkdir(parents=True, exist_ok=True)
-            
-            logger.info(f"Extracting ZIP to: {mineru_storage}")
-            
-            markdown_content = None
-            markdown_file_path = None
-            
-            with zipfile.ZipFile(io.BytesIO(response.content)) as z:
-                # Extract all files
-                z.extractall(mineru_storage)
-                logger.info(f"Extracted {len(z.namelist())} files from ZIP")
-                
-                # Find markdown file (usually full.md or similar)
-                for name in z.namelist():
-                    if name.endswith('.md') or name.endswith('.MD'):
-                        markdown_file_path = name
-                        md_full_path = mineru_storage / name
-                        with open(md_full_path, 'r', encoding='utf-8') as f:
-                            markdown_content = f.read()
-                        logger.info(f"Found markdown file: {name}")
-                        break
-                
-                if not markdown_content:
-                    error_msg = "No markdown file found in result zip"
-                    logger.error(error_msg)
-                    return None, error_msg
-            
-            # Replace relative image paths with local server URLs
-            markdown_content = self._replace_image_paths(
-                markdown_content, 
-                markdown_file_path,
-                extract_id
-            )
-            
-            return markdown_content, None
-                
-        except requests.exceptions.RequestException as e:
-            error_msg = f"Failed to download result: {str(e)}"
+
+            result = response.json()
+
+            # Check response status
+            if result.get('status') != 'success':
+                error_msg = f"Docling parsing failed: {result.get('errors', 'Unknown error')}"
+                logger.error(error_msg)
+                return None, error_msg
+
+            # Extract markdown content
+            md_content = result.get('document', {}).get('md_content', '')
+            if not md_content:
+                error_msg = "Docling returned empty markdown content"
+                logger.error(error_msg)
+                return None, error_msg
+
+            logger.info(f"Docling parsing completed in {result.get('processing_time', 0):.2f}s")
+
+            # Save embedded base64 images to local files and replace URLs
+            md_content = self._save_base64_images(md_content)
+
+            return md_content, None
+
+        except requests.exceptions.Timeout:
+            error_msg = "Docling API timeout (exceeded 5 minutes)"
             logger.error(error_msg)
             return None, error_msg
-        except zipfile.BadZipFile:
-            error_msg = "Downloaded file is not a valid ZIP archive"
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Docling API request failed: {str(e)}"
             logger.error(error_msg)
             return None, error_msg
         except Exception as e:
-            error_msg = f"Failed to process ZIP file: {str(e)}"
-            logger.error(error_msg)
+            error_msg = f"Unexpected error during Docling parsing: {str(e)}"
+            logger.error(error_msg, exc_info=True)
             return None, error_msg
-    
-    def _replace_image_paths(self, markdown_content: str, markdown_file_path: str, extract_id: str) -> str:
-        """Replace relative image paths in markdown with local server URLs"""
-        import os
-        
-        # Get the directory where the markdown file is located (within the extracted ZIP)
-        md_dir = os.path.dirname(markdown_file_path)
-        
-        def replace_link(match):
+
+    def _save_base64_images(self, markdown_content: str) -> str:
+        """
+        Extract base64 images from markdown, save to local files, and replace with URLs
+
+        Args:
+            markdown_content: Markdown with embedded base64 images
+
+        Returns:
+            Markdown with local image URLs
+        """
+        # Generate unique directory for this extraction
+        extract_id = str(uuid.uuid4())[:8]
+
+        # Get project root and create storage directory
+        current_file = Path(__file__).resolve()
+        backend_dir = current_file.parent.parent
+        project_root = backend_dir.parent
+        docling_storage = project_root / 'uploads' / 'docling_files' / extract_id
+        docling_storage.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Saving images to: {docling_storage}")
+
+        image_count = 0
+
+        def save_and_replace(match):
+            nonlocal image_count
             alt_text = match.group(1)
-            img_path = match.group(2)
-            
-            # Skip if already an absolute URL
-            if img_path.startswith(('http://', 'https://')):
+            img_data = match.group(2)
+
+            # Skip if not a base64 data URL
+            if not img_data.startswith('data:image/'):
                 return match.group(0)
-            
-            # Handle /file/ or /files/ paths (MinerU may generate these)
-            # These are relative to the extracted directory
-            if img_path.startswith('/file/') or img_path.startswith('/files/'):
-                # Remove leading slash and use as relative path
-                rel_path = img_path.lstrip('/')
-                # Remove 'file/' or 'files/' prefix if present
-                if rel_path.startswith('file/'):
-                    rel_path = rel_path[5:]  # Remove 'file/' prefix
-                elif rel_path.startswith('files/'):
-                    rel_path = rel_path[6:]  # Remove 'files/' prefix
-            else:
-                # Calculate the relative path from the markdown file
-                if md_dir:
-                    # Normalize path separators
-                    rel_path = os.path.normpath(os.path.join(md_dir, img_path)).replace('\\', '/')
-                else:
-                    rel_path = img_path.replace('\\', '/')
-            
-            # Construct the local server URL
-            # The files are served at /files/mineru/{extract_id}/{rel_path}
-            new_url = f"/files/mineru/{extract_id}/{rel_path[:15]}.{rel_path.split('.')[-1]}" # "images/...(8)"
-            
-            logger.debug(f"Replacing image path: {img_path} -> {new_url}")
-            return f"![{alt_text}]({new_url})"
-        
-        # Match markdown image syntax
-        pattern = r"!\[(.*?)\]\((.*?)\)"
-        replaced_content = re.sub(pattern, replace_link, markdown_content)
-        
-        return replaced_content
+
+            try:
+                # Parse data URL: data:image/png;base64,xxxxx
+                header, b64_data = img_data.split(',', 1)
+                # Extract image format from header
+                img_format = header.split('/')[1].split(';')[0]  # png, jpeg, etc.
+
+                # Decode base64
+                img_bytes = base64.b64decode(b64_data)
+
+                # Save to file
+                image_count += 1
+                img_filename = f"image_{image_count:06d}.{img_format}"
+                img_path = docling_storage / img_filename
+                with open(img_path, 'wb') as f:
+                    f.write(img_bytes)
+
+                # Return markdown with local URL
+                new_url = f"/files/docling/{extract_id}/{img_filename}"
+                logger.debug(f"Saved image: {img_filename} ({len(img_bytes)} bytes)")
+                return f"![{alt_text}]({new_url})"
+
+            except Exception as e:
+                logger.warning(f"Failed to save base64 image: {str(e)}")
+                return match.group(0)  # Keep original on error
+
+        # Match markdown image syntax with data URLs
+        pattern = r'!\[(.*?)\]\((data:image/[^)]+)\)'
+        result = re.sub(pattern, save_and_replace, markdown_content)
+
+        logger.info(f"Saved {image_count} images from markdown")
+        return result
+
     
     def _enhance_markdown_with_captions(self, markdown_content: str) -> tuple[str, int]:
         """
@@ -625,14 +532,30 @@ class FileParserService:
             elif image_url.startswith('/files/mineru/'):
                 # Local MinerU extracted file with prefix matching support
                 from utils.path_utils import find_mineru_file_with_prefix
-                
+
                 # Find file with prefix matching
                 img_path = find_mineru_file_with_prefix(image_url)
-                
+
                 if img_path is None or not img_path.exists():
                     logger.warning(f"Local image file not found (with prefix matching): {image_url}")
                     return ""
-                
+
+                image = Image.open(img_path)
+            elif image_url.startswith('/files/docling/'):
+                # Local Docling extracted file
+                # URL format: /files/docling/{extract_id}/{filename}
+                current_file = Path(__file__).resolve()
+                backend_dir = current_file.parent.parent
+                project_root = backend_dir.parent
+
+                # Extract path after /files/docling/
+                rel_path = image_url[len('/files/docling/'):]
+                img_path = project_root / 'uploads' / 'docling_files' / rel_path
+
+                if not img_path.exists():
+                    logger.warning(f"Local Docling image file not found: {image_url}")
+                    return ""
+
                 image = Image.open(img_path)
             else:
                 # Unsupported path type
