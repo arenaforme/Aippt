@@ -44,7 +44,7 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [parsingIds, setParsingIds] = useState<Set<string>>(new Set());
-  const [filterProjectId, setFilterProjectId] = useState<string>('all'); // 始终默认显示所有附件
+  const [filterProjectId, setFilterProjectId] = useState<string>('session'); // 默认只显示当前会话上传的文件
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initialSelectedIdsRef = useRef(initialSelectedIds);
   const showRef = useRef(show);
@@ -56,6 +56,13 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
   }, [initialSelectedIds, show]);
 
   const loadFiles = useCallback(async () => {
+    // 如果是 session 模式，不需要从后端加载，直接返回
+    // session 模式下的文件列表由上传操作直接更新 files 状态
+    if (filterProjectId === 'session') {
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       // 根据 filterProjectId 决定查询哪些文件
@@ -99,9 +106,18 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
 
   useEffect(() => {
     if (isOpen) {
-      loadFiles();
+      // 每次打开对话框时，重置为 session 模式，清空文件列表
+      setFilterProjectId('session');
+      setFiles([]);
       // 恢复初始选择
       setSelectedFiles(new Set(initialSelectedIdsRef.current));
+    }
+  }, [isOpen]);
+
+  // 当筛选条件变化时重新加载文件
+  useEffect(() => {
+    if (isOpen) {
+      loadFiles();
     }
   }, [isOpen, filterProjectId, loadFiles]);
 
@@ -251,9 +267,9 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
     setIsUploading(true);
     try {
       // 根据当前筛选条件决定上传文件的归属
-      // 如果筛选为 'all' 或 'none'，上传为全局文件（不关联项目）
+      // 如果筛选为 'session'、'all' 或 'none'，上传为全局文件（不关联项目）
       // 如果筛选为项目ID，上传到该项目
-      const targetProjectId = (filterProjectId === 'all' || filterProjectId === 'none')
+      const targetProjectId = (filterProjectId === 'session' || filterProjectId === 'all' || filterProjectId === 'none')
         ? null
         : filterProjectId;
       
@@ -269,9 +285,9 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
 
       if (uploadedFiles.length > 0) {
         show({ message: `成功上传 ${uploadedFiles.length} 个文件`, type: 'success' });
-        
+
         // 只有正在解析的文件才添加到轮询列表（pending 状态的文件不轮询）
-        const needsParsing = uploadedFiles.filter(f => 
+        const needsParsing = uploadedFiles.filter(f =>
           f.parse_status === 'parsing'
         );
         if (needsParsing.length > 0) {
@@ -281,18 +297,13 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
             return newSet;
           });
         }
-        
-        // 合并新上传的文件到现有列表，而不是完全替换
+
+        // 合并新上传的文件到显示列表
         setFiles(prev => {
           const fileMap = new Map(prev.map(f => [f.id, f]));
           uploadedFiles.forEach(uf => fileMap.set(uf.id, uf));
           return Array.from(fileMap.values());
         });
-        
-        // 延迟重新加载文件列表，确保服务器端数据已更新
-        setTimeout(() => {
-          loadFiles();
-        }, 500);
       }
     } catch (error: any) {
       console.error('上传文件失败:', error);
@@ -330,22 +341,23 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
     try {
       await deleteReferenceFile(fileId);
       show({ message: '文件删除成功', type: 'success' });
-      
+
       // 从选择中移除
       setSelectedFiles((prev) => {
         const newSet = new Set(prev);
         newSet.delete(fileId);
         return newSet;
       });
-      
+
       // 从轮询列表中移除
       setParsingIds((prev) => {
         const newSet = new Set(prev);
         newSet.delete(fileId);
         return newSet;
       });
-      
-      loadFiles(); // 重新加载文件列表
+
+      // 从显示列表中移除
+      setFiles((prev) => prev.filter(f => f.id !== fileId));
     } catch (error: any) {
       console.error('删除文件失败:', error);
       show({
@@ -414,18 +426,19 @@ export const ReferenceFileSelector: React.FC<ReferenceFileSelectorProps> = React
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {/* 项目筛选下拉菜单 */}
-            <select
-              value={filterProjectId}
-              onChange={(e) => setFilterProjectId(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-banana-500"
-            >
-              <option value="all">所有附件</option>
-              <option value="none">未归类附件</option>
-              {projectId && projectId !== 'global' && projectId !== 'none' && (
+            {/* 项目筛选下拉菜单 - 只显示本次上传和当前项目附件，隐藏历史附件入口 */}
+            {projectId && projectId !== 'global' && projectId !== 'none' ? (
+              <select
+                value={filterProjectId}
+                onChange={(e) => setFilterProjectId(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-banana-500"
+              >
+                <option value="session">本次上传</option>
                 <option value={projectId}>当前项目附件</option>
-              )}
-            </select>
+              </select>
+            ) : (
+              <span className="px-3 py-1.5 text-sm text-gray-600">本次上传</span>
+            )}
             
             <Button
               variant="ghost"

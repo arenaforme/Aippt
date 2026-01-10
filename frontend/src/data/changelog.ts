@@ -22,6 +22,13 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.7.8',
+    date: '2026-01-10',
+    changes: [
+      { type: 'fix', description: '附件上传权限隔离，用户只能看到本次上传的文件' },
+    ],
+  },
+  {
     version: 'v2.7.7',
     date: '2026-01-10',
     changes: [
