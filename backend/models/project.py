@@ -21,6 +21,7 @@ class Project(db.Model):
     outline_text = db.Column(db.Text, nullable=True)  # 用户输入的大纲文本（用于outline类型）
     description_text = db.Column(db.Text, nullable=True)  # 用户输入的描述文本（用于description类型）
     extra_requirements = db.Column(db.Text, nullable=True)  # 额外要求，应用到每个页面的AI提示词
+    generated_filename = db.Column(db.String(100), nullable=True)  # AI生成的文件名（不含扩展名）
     creation_type = db.Column(db.String(20), nullable=False, default='idea')  # idea|outline|descriptions
     template_image_path = db.Column(db.String(500), nullable=True)
     status = db.Column(db.String(50), nullable=False, default='DRAFT')

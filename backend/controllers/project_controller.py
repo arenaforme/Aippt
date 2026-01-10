@@ -433,9 +433,21 @@ def generate_outline(project_id):
         # Update project status
         project.status = 'OUTLINE_GENERATED'
         project.updated_at = datetime.utcnow()
-        
+
+        # 预生成文件名并缓存（避免导出时延迟）
+        try:
+            outline_text = ai_service.generate_outline_text(outline)
+            content_for_filename = outline_text or project.idea_prompt or ''
+            if content_for_filename:
+                generated_name = ai_service.generate_filename(content_for_filename)
+                if generated_name:
+                    project.generated_filename = generated_name
+                    logger.info(f"预生成文件名: {generated_name}")
+        except Exception as e:
+            logger.warning(f"预生成文件名失败: {e}")
+
         db.session.commit()
-        
+
         logger.info(f"大纲生成完成: 项目 {project_id}, 创建了 {len(pages_list)} 个页面")
         
         # Return pages
@@ -554,9 +566,21 @@ def generate_from_description(project_id):
         # Update project status
         project.status = 'DESCRIPTIONS_GENERATED'
         project.updated_at = datetime.utcnow()
-        
+
+        # 预生成文件名并缓存（避免导出时延迟）
+        try:
+            outline_text = ai_service.generate_outline_text(outline)
+            content_for_filename = outline_text or description_text or ''
+            if content_for_filename:
+                generated_name = ai_service.generate_filename(content_for_filename)
+                if generated_name:
+                    project.generated_filename = generated_name
+                    logger.info(f"预生成文件名: {generated_name}")
+        except Exception as e:
+            logger.warning(f"预生成文件名失败: {e}")
+
         db.session.commit()
-        
+
         logger.info(f"从描述生成完成: 项目 {project_id}, 创建了 {len(pages_list)} 个页面，已填充大纲和描述")
         
         # Return pages

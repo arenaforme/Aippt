@@ -22,6 +22,25 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.7.7',
+    date: '2026-01-10',
+    changes: [
+      { type: 'feat', description: '导出文件名智能生成，根据 PPT 内容自动命名' },
+      { type: 'perf', description: '文件名预生成缓存，优化导出体验' },
+    ],
+  },
+  {
+    version: 'v2.7.6',
+    date: '2026-01-10',
+    changes: [
+      { type: 'feat', description: '新增 Grsai 图片生成 Provider，支持第三方 API 2K 分辨率' },
+      { type: 'feat', description: 'Docling 替换 MinerU 作为文档解析引擎' },
+      { type: 'feat', description: '手机号绑定功能' },
+      { type: 'perf', description: '权限控制优化' },
+      { type: 'fix', description: 'SQLite 迁移使用 batch 模式添加字段' },
+    ],
+  },
+  {
     version: 'v2.7.5',
     date: '2026-01-08',
     changes: [

@@ -5,16 +5,93 @@ from flask import Blueprint, request, current_app
 from models import db, Project, Page, Task
 from utils import error_response, not_found, bad_request, success_response
 from utils.auth import login_required, feature_required
-from services import ExportService, FileService
+from services import ExportService, FileService, AIService
 from services.task_manager import task_manager, export_editable_ppt_task
 import os
 import io
 import uuid
+import re
 
 export_bp = Blueprint('export', __name__, url_prefix='/api/projects')
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+def _sanitize_filename(title: str, max_length: int = 50) -> str:
+    """
+    将标题转换为安全的文件名
+    """
+    if not title:
+        return "presentation"
+
+    # 移除不安全字符，保留中文、英文、数字、空格、下划线、连字符
+    safe_name = re.sub(r'[\\/:*?"<>|\n\r]', '', title)
+    safe_name = re.sub(r'\s+', ' ', safe_name).strip()
+    if len(safe_name) > max_length:
+        safe_name = safe_name[:max_length].strip()
+    if not safe_name:
+        return "presentation"
+
+    return safe_name
+
+
+def _generate_filename_with_ai(project: Project) -> str:
+    """
+    获取项目的文件名
+
+    优先级：缓存的文件名 > AI 生成 > 默认标题
+
+    Args:
+        project: 项目对象
+
+    Returns:
+        生成的文件名（不含扩展名）
+    """
+    # 优先使用缓存的文件名（大纲生成时预生成）
+    if project.generated_filename:
+        logger.info(f"使用缓存的文件名: {project.generated_filename}")
+        return project.generated_filename
+
+    # 回退：调用 AI 生成（兼容旧项目）
+    try:
+        content_parts = []
+
+        if project.outline_text:
+            content_parts.append(f"大纲：{project.outline_text[:300]}")
+
+        if project.idea_prompt:
+            content_parts.append(f"主题：{project.idea_prompt[:200]}")
+
+        if not content_parts:
+            pages = Page.query.filter_by(
+                project_id=project.id
+            ).order_by(Page.order_index).limit(3).all()
+
+            for page in pages:
+                desc = page.get_description_content()
+                if desc and desc.get('title'):
+                    content_parts.append(f"页面标题：{desc['title']}")
+
+        if not content_parts:
+            return _sanitize_filename(project.title)
+
+        content = "\n".join(content_parts)
+        ai_service = AIService()
+        filename = ai_service.generate_filename(content)
+
+        if filename:
+            # 缓存生成的文件名
+            project.generated_filename = filename
+            db.session.commit()
+            logger.info(f"AI 生成并缓存文件名: {filename}")
+            return filename
+
+        return _sanitize_filename(project.title)
+
+    except Exception as e:
+        logger.warning(f"AI 生成文件名失败: {e}，使用默认方式")
+        return _sanitize_filename(project.title)
 
 
 def _build_reference_text_from_pages(pages) -> str:
@@ -111,8 +188,9 @@ def export_pptx(project_id):
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         exports_dir = file_service._get_exports_dir(project_id)
         
-        # Get filename from query params or use default
-        filename = request.args.get('filename', f'presentation_{project_id}.pptx')
+        # Get filename from query params or generate with AI
+        default_filename = _generate_filename_with_ai(project) + '.pptx'
+        filename = request.args.get('filename', default_filename)
         if not filename.endswith('.pptx'):
             filename += '.pptx'
 
@@ -183,8 +261,9 @@ def export_pdf(project_id):
         file_service = FileService(current_app.config['UPLOAD_FOLDER'])
         exports_dir = file_service._get_exports_dir(project_id)
 
-        # Get filename from query params or use default
-        filename = request.args.get('filename', f'presentation_{project_id}.pdf')
+        # Get filename from query params or generate with AI
+        default_filename = _generate_filename_with_ai(project) + '.pdf'
+        filename = request.args.get('filename', default_filename)
         if not filename.endswith('.pdf'):
             filename += '.pdf'
 
@@ -282,12 +361,10 @@ def export_editable_pptx(project_id):
         # 确定导出目录和文件名
         exports_dir = file_service._get_exports_dir(project_id)
 
-        # 从请求体获取文件名
+        # 从请求体获取文件名，或使用 AI 生成
         data = request.get_json() or {}
-        filename = data.get(
-            'filename',
-            f'editable_{project_id}.pptx'
-        )
+        default_filename = _generate_filename_with_ai(project) + '_可编辑.pptx'
+        filename = data.get('filename', default_filename)
         if not filename.endswith('.pptx'):
             filename += '.pptx'
 

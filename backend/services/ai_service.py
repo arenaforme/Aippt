@@ -345,7 +345,46 @@ class AIService:
                 text_parts.append(f"{i}. {item.get('title', 'Untitled')}")
         result = "\n".join(text_parts)
         return dedent(result)
-    
+
+    def generate_filename(self, content: str) -> str:
+        """
+        使用 AI 根据内容生成简短的文件名
+
+        Args:
+            content: PPT 相关内容（大纲、主题等）
+
+        Returns:
+            生成的文件名（不含扩展名），最多30字符
+        """
+        try:
+            prompt = f"""请根据以下PPT内容，生成一个简短的文件名（不超过15个字）。
+要求：
+1. 简洁明了，能概括PPT主题
+2. 只输出文件名，不要包含扩展名和任何解释
+3. 不要使用特殊字符
+
+内容：
+{content[:500]}
+
+文件名："""
+
+            result = self.text_provider.generate_text(prompt, thinking_budget=0)
+            # 清理结果
+            filename = result.strip().strip('"\'')
+            # 移除不安全字符
+            filename = re.sub(r'[\\/:*?"<>|\n\r]', '', filename)
+            filename = re.sub(r'\s+', ' ', filename).strip()
+            # 截断
+            if len(filename) > 30:
+                filename = filename[:30].strip()
+
+            logger.info(f"AI 生成文件名: {filename}")
+            return filename if filename else "presentation"
+
+        except Exception as e:
+            logger.warning(f"AI 生成文件名失败: {e}")
+            return ""
+
     def generate_image_prompt(self, outline: List[Dict], page: Dict, 
                             page_desc: str, page_index: int, 
                             has_material_images: bool = False,
