@@ -213,7 +213,7 @@ class GrsaiImageProvider(ImageProvider):
 
         # 记录原始响应内容（用于调试）
         logger.info(f"Raw stream response length: {len(raw_content)} chars")
-        logger.debug(f"Raw stream response (first 500 chars): {raw_content[:500]}")
+        logger.info(f"Raw stream response content: {raw_content[:500]}")
 
         # 按行解析
         lines = buffer.split("\n")

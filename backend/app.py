@@ -219,6 +219,11 @@ def _load_settings_to_config(app):
             app.config['IMAGE_CAPTION_MODEL'] = settings.image_caption_model
             logging.info(f"Loaded IMAGE_CAPTION_MODEL from settings: {settings.image_caption_model}")
 
+        # Load Docling settings
+        if settings.docling_api_base:
+            app.config['DOCLING_API_BASE'] = settings.docling_api_base
+            logging.info(f"Loaded DOCLING_API_BASE from settings: {settings.docling_api_base}")
+
         # Load image generation settings
         app.config['DEFAULT_RESOLUTION'] = settings.image_resolution
         app.config['DEFAULT_ASPECT_RATIO'] = settings.image_aspect_ratio

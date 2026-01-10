@@ -121,6 +121,9 @@ def update_settings():
         if "mineru_token" in data:
             settings.mineru_token = data["mineru_token"]
 
+        if "docling_api_base" in data:
+            settings.docling_api_base = (data["docling_api_base"] or "").strip() or None
+
         if "image_caption_model" in data:
             settings.image_caption_model = (data["image_caption_model"] or "").strip() or None
 
