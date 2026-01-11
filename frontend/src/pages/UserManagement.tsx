@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight, Crown, Image, Zap, FileText, Phone } from 'lucide-react';
 import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu } from '@/components/shared';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, getSystemConfig, updateSystemConfig } from '@/api/endpoints';
+import { formatDate } from '@/utils/projectUtils';
 import * as membershipApi from '@/api/membership';
 import type { AdminUser } from '@/api/endpoints';
 import type { MembershipPlan } from '@/api/membership';
@@ -526,7 +527,7 @@ const UserTable: React.FC<{
               </select>
             </td>
             <td className="py-3 px-4 text-sm text-gray-500">
-              {new Date(u.created_at).toLocaleDateString('zh-CN')}
+              {formatDate(u.created_at)}
             </td>
             <td className="py-3 px-4 text-right">
               <div className="flex items-center justify-end gap-1">
@@ -639,7 +640,14 @@ const LEVEL_CONFIG: Record<string, { label: string; color: string; bgColor: stri
 
 const MembershipLevelBadge: React.FC<{ level?: string; expiresAt?: string }> = ({ level, expiresAt }) => {
   const config = LEVEL_CONFIG[level || 'free'] || LEVEL_CONFIG.free;
-  const isExpired = expiresAt && new Date(expiresAt) < new Date();
+  // 处理 UTC 时间：后端返回的时间不带时区后缀，需要添加 'Z' 后缀
+  const parseExpiresAt = (dateStr: string) => {
+    const utcDateStr = dateStr.endsWith('Z') || dateStr.includes('+') || dateStr.includes('-', 10)
+      ? dateStr
+      : dateStr + 'Z';
+    return new Date(utcDateStr);
+  };
+  const isExpired = expiresAt && parseExpiresAt(expiresAt) < new Date();
 
   return (
     <div className="flex flex-col gap-0.5">
@@ -650,7 +658,7 @@ const MembershipLevelBadge: React.FC<{ level?: string; expiresAt?: string }> = (
       </span>
       {expiresAt && !isExpired && (
         <span className="text-[10px] text-gray-400">
-          {new Date(expiresAt).toLocaleDateString('zh-CN')}到期
+          {parseExpiresAt(expiresAt).toLocaleDateString('zh-CN')}到期
         </span>
       )}
     </div>

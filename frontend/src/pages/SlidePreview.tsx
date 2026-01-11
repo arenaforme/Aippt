@@ -1071,7 +1071,7 @@ export const SlidePreview: React.FC = () => {
                                 </div>
                                 <span className="text-xs text-gray-400 hidden md:inline">
                                   {version.created_at
-                                    ? new Date(version.created_at).toLocaleString('zh-CN', {
+                                    ? new Date(version.created_at.endsWith('Z') ? version.created_at : version.created_at + 'Z').toLocaleString('zh-CN', {
                                         month: 'short',
                                         day: 'numeric',
                                         hour: '2-digit',

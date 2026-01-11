@@ -1182,3 +1182,129 @@ export const getProfile = async (): Promise<ApiResponse<{ user: any }>> => {
   const response = await apiClient.get<ApiResponse<{ user: any }>>('/api/auth/profile');
   return response.data;
 };
+
+// ===== 通知相关 API =====
+
+import type { Notification } from '@/types';
+
+/**
+ * 获取弹窗通知（公开接口）
+ */
+export const getPopupNotifications = async (): Promise<ApiResponse<{
+  notifications: Notification[];
+  popup_enabled: boolean;
+}>> => {
+  const response = await apiClient.get<ApiResponse<{
+    notifications: Notification[];
+    popup_enabled: boolean;
+  }>>('/api/notifications/popup');
+  return response.data;
+};
+
+/**
+ * 获取所有通知（需登录）
+ */
+export const getNotifications = async (): Promise<ApiResponse<{
+  notifications: Notification[];
+}>> => {
+  const response = await apiClient.get<ApiResponse<{
+    notifications: Notification[];
+  }>>('/api/notifications');
+  return response.data;
+};
+
+/**
+ * 检查是否有未读通知
+ */
+export const checkUnreadNotifications = async (): Promise<ApiResponse<{
+  has_unread: boolean;
+}>> => {
+  const response = await apiClient.get<ApiResponse<{
+    has_unread: boolean;
+  }>>('/api/notifications/unread');
+  return response.data;
+};
+
+/**
+ * 标记通知已读
+ */
+export const markNotificationsRead = async (): Promise<ApiResponse<null>> => {
+  const response = await apiClient.post<ApiResponse<null>>('/api/notifications/mark-read');
+  return response.data;
+};
+
+// ===== 通知管理 API（管理员） =====
+
+/**
+ * 获取所有通知（管理员）
+ */
+export const adminGetNotifications = async (): Promise<ApiResponse<{
+  notifications: Notification[];
+}>> => {
+  const response = await apiClient.get<ApiResponse<{
+    notifications: Notification[];
+  }>>('/api/notifications/admin');
+  return response.data;
+};
+
+/**
+ * 创建通知
+ */
+export const adminCreateNotification = async (data: {
+  title: string;
+  content: string;
+  is_active?: boolean;
+  show_in_popup?: boolean;
+  sort_order?: number;
+}): Promise<ApiResponse<{ notification: Notification }>> => {
+  const response = await apiClient.post<ApiResponse<{
+    notification: Notification;
+  }>>('/api/notifications/admin', data);
+  return response.data;
+};
+
+/**
+ * 更新通知
+ */
+export const adminUpdateNotification = async (
+  id: string,
+  data: Partial<Notification>
+): Promise<ApiResponse<{ notification: Notification }>> => {
+  const response = await apiClient.put<ApiResponse<{
+    notification: Notification;
+  }>>(`/api/notifications/admin/${id}`, data);
+  return response.data;
+};
+
+/**
+ * 删除通知
+ */
+export const adminDeleteNotification = async (id: string): Promise<ApiResponse<null>> => {
+  const response = await apiClient.delete<ApiResponse<null>>(`/api/notifications/admin/${id}`);
+  return response.data;
+};
+
+/**
+ * 获取通知设置
+ */
+export const adminGetNotificationSettings = async (): Promise<ApiResponse<{
+  popup_enabled: boolean;
+}>> => {
+  const response = await apiClient.get<ApiResponse<{
+    popup_enabled: boolean;
+  }>>('/api/notifications/admin/settings');
+  return response.data;
+};
+
+/**
+ * 更新通知设置
+ */
+export const adminUpdateNotificationSettings = async (data: {
+  popup_enabled: boolean;
+}): Promise<ApiResponse<null>> => {
+  const response = await apiClient.put<ApiResponse<null>>(
+    '/api/notifications/admin/settings',
+    data
+  );
+  return response.data;
+};

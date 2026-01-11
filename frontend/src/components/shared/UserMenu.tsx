@@ -4,7 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap, User } from 'lucide-react';
+import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap, User, Bell } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Modal } from './Modal';
 import { Input } from './Input';
@@ -12,6 +12,7 @@ import { Button } from './Button';
 import { useToast } from './Toast';
 import { changePassword } from '@/api/auth';
 import * as membershipApi from '@/api/membership';
+import { checkUnreadNotifications } from '@/api/endpoints';
 import type { MembershipStatus } from '@/api/membership';
 
 // 会员等级配置
@@ -42,11 +43,27 @@ export const UserMenu: React.FC = () => {
   const [showPasswords, setShowPasswords] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // 未读通知状态
+  const [hasUnread, setHasUnread] = useState(false);
+
   // 获取会员状态
   useEffect(() => {
     if (user) {
       membershipApi.getMembershipStatus()
         .then(setMembershipStatus)
+        .catch(() => {}); // 静默失败
+    }
+  }, [user]);
+
+  // 检查未读通知
+  useEffect(() => {
+    if (user) {
+      checkUnreadNotifications()
+        .then(res => {
+          if (res.success && res.data) {
+            setHasUnread(res.data.has_unread);
+          }
+        })
         .catch(() => {}); // 静默失败
     }
   }, [user]);
@@ -228,6 +245,23 @@ export const UserMenu: React.FC = () => {
               <Key size={16} />
               修改密码
             </button>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                setHasUnread(false);
+                navigate('/notifications');
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+            >
+              <div className="relative">
+                <Bell size={16} />
+                {hasUnread && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </div>
+              通知
+            </button>
           </div>
 
           {/* 管理员菜单 */}
@@ -265,6 +299,17 @@ export const UserMenu: React.FC = () => {
               >
                 <FileText size={16} />
                 审计日志
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/admin/notifications');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              >
+                <Bell size={16} />
+                通知管理
               </button>
             </div>
           )}

@@ -47,9 +47,16 @@ export const getFirstPageImage = (project: Project): string | null => {
 
 /**
  * 格式化日期
+ * 后端返回的时间是 UTC 时间（不带时区后缀），需要添加 'Z' 后缀让浏览器正确解析为 UTC
+ * 然后 toLocaleString 会自动转换为本地时间显示
  */
-export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
+export const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) return '-';
+  // 如果时间字符串不带时区信息，假设为 UTC 时间，添加 'Z' 后缀
+  const utcDateStr = dateString.endsWith('Z') || dateString.includes('+') || dateString.includes('-', 10)
+    ? dateString
+    : dateString + 'Z';
+  const date = new Date(utcDateStr);
   return date.toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, FileText, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { Button, Card, Input, Loading, UserMenu } from '@/components/shared';
 import { listAuditLogs, listUsers } from '@/api/endpoints';
+import { formatDate } from '@/utils/projectUtils';
 import type { AuditLogEntry, AdminUser } from '@/api/endpoints';
 
 // 操作类型映射
@@ -73,11 +74,6 @@ export const AuditLogs: React.FC = () => {
     loadLogs();
     loadUsers();
   }, [loadLogs, loadUsers]);
-
-  // 格式化日期
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('zh-CN');
-  };
 
   // 获取操作类型标签
   const getActionLabel = (action: string) => {

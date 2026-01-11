@@ -32,6 +32,7 @@ from controllers.membership_controller import membership_bp
 from controllers.admin_membership_controller import admin_membership_bp
 from controllers.order_controller import order_bp
 from controllers.payment_callback_controller import payment_callback_bp
+from controllers.notification_controller import notification_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, export_bp, file_bp
 
 
@@ -128,6 +129,7 @@ def create_app():
     app.register_blueprint(admin_membership_bp)
     app.register_blueprint(order_bp)
     app.register_blueprint(payment_callback_bp)
+    app.register_blueprint(notification_bp)
 
     with app.app_context():
         # Load settings from database and sync to app.config

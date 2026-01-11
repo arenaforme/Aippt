@@ -19,6 +19,8 @@ import { MembershipPlans } from './pages/MembershipPlans';
 import { Orders } from './pages/Orders';
 import { AdminOrders } from './pages/AdminOrders';
 import { AgreementManagement } from './pages/AgreementManagement';
+import { Notifications } from './pages/Notifications';
+import { AdminNotifications } from './pages/AdminNotifications';
 import PdfToPptx from './pages/PdfToPptx';
 import { useProjectStore } from './store/useProjectStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -70,6 +72,7 @@ function App() {
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/membership" element={<ProtectedRoute><Membership /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/project/:projectId/outline" element={<ProtectedRoute><OutlineEditor /></ProtectedRoute>} />
         <Route path="/project/:projectId/detail" element={<ProtectedRoute><DetailEditor /></ProtectedRoute>} />
         <Route path="/project/:projectId/preview" element={<ProtectedRoute><SlidePreview /></ProtectedRoute>} />
@@ -81,6 +84,7 @@ function App() {
         <Route path="/admin/membership/plans" element={<ProtectedRoute requireAdmin><MembershipPlans /></ProtectedRoute>} />
         <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
         <Route path="/admin/agreements" element={<ProtectedRoute requireAdmin><AgreementManagement /></ProtectedRoute>} />
+        <Route path="/admin/notifications" element={<ProtectedRoute requireAdmin><AdminNotifications /></ProtectedRoute>} />
 
         {/* 工具路由 */}
         <Route path="/tools/pdf-to-pptx" element={<ProtectedRoute><PdfToPptx /></ProtectedRoute>} />

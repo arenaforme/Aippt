@@ -61,10 +61,14 @@ export const Membership: React.FC = () => {
     }
   };
 
-  // 格式化日期
-  const formatDate = (dateStr: string | null) => {
+  // 格式化会员到期日期（只显示日期，空值显示"永久"）
+  const formatExpiryDate = (dateStr: string | null) => {
     if (!dateStr) return '永久';
-    const date = new Date(dateStr);
+    // 如果时间字符串不带时区信息，假设为 UTC 时间
+    const utcDateStr = dateStr.endsWith('Z') || dateStr.includes('+') || dateStr.includes('-', 10)
+      ? dateStr
+      : dateStr + 'Z';
+    const date = new Date(utcDateStr);
     return date.toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: 'long',
@@ -159,7 +163,7 @@ export const Membership: React.FC = () => {
                 {status.expires_at && (
                   <p className="text-sm text-gray-500 flex items-center gap-1">
                     <Clock size={14} />
-                    到期时间：{formatDate(status.expires_at)}
+                    到期时间：{formatExpiryDate(status.expires_at)}
                   </p>
                 )}
               </div>

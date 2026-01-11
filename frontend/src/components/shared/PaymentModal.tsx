@@ -48,7 +48,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         setStep('paying');
         // 计算倒计时
         if (newOrder.expires_at) {
-          const expiresAt = new Date(newOrder.expires_at).getTime();
+          // 后端返回的时间是 UTC 时间（不带时区后缀），需要添加 'Z' 后缀
+          const expiresAtStr = newOrder.expires_at.endsWith('Z') || newOrder.expires_at.includes('+') || newOrder.expires_at.includes('-', 10)
+            ? newOrder.expires_at
+            : newOrder.expires_at + 'Z';
+          const expiresAt = new Date(expiresAtStr).getTime();
           const now = Date.now();
           setCountdown(Math.max(0, Math.floor((expiresAt - now) / 1000)));
         }

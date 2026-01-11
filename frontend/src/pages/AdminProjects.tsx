@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Trash2, FolderOpen, User, AlertTriangle, Eye } from 'lucide-react';
 import { Button, Card, Input, Loading, useToast, useConfirm, UserMenu } from '@/components/shared';
 import { listAllProjects, adminDeleteProject, listUsers } from '@/api/endpoints';
+import { formatDate } from '@/utils/projectUtils';
 import type { AdminProject, AdminUser } from '@/api/endpoints';
 
 export const AdminProjects: React.FC = () => {
@@ -77,11 +78,6 @@ export const AdminProjects: React.FC = () => {
       },
       { title: '删除项目', confirmText: '删除', cancelText: '取消', variant: 'danger' }
     );
-  };
-
-  // 格式化日期
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('zh-CN');
   };
 
   return (

@@ -9,6 +9,7 @@ import { Button, Card, useToast, Modal, Input } from '@/components/shared';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getProfile } from '@/api/endpoints';
 import { changePassword } from '@/api/auth';
+import { formatDate } from '@/utils/projectUtils';
 
 interface MembershipInfo {
   level?: string;
@@ -115,12 +116,6 @@ export const Profile: React.FC = () => {
     } finally {
       setIsChangingPassword(false);
     }
-  };
-
-  // 格式化日期
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleString('zh-CN');
   };
 
   if (isLoading) {

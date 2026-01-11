@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Home, FileText, Clock, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Button, Card, Loading, useToast, UserMenu } from '@/components/shared';
 import * as membershipApi from '@/api/membership';
+import { formatDate } from '@/utils/projectUtils';
 import type { Order } from '@/api/membership';
 
 // 订单状态配置
@@ -75,19 +76,6 @@ export const Orders: React.FC = () => {
   // 判断订单是否可删除
   const canDelete = (order: Order) => {
     return order.status === 'cancelled' || order.status === 'expired';
-  };
-
-  // 格式化日期
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    const date = new Date(dateStr);
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   // 获取状态配置

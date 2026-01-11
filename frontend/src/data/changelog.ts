@@ -22,6 +22,17 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.7.9',
+    date: '2026-01-11',
+    changes: [
+      { type: 'feat', description: '新增通知公告系统，支持落地页弹窗展示' },
+      { type: 'feat', description: '管理员通知管理功能（创建、编辑、删除、排序）' },
+      { type: 'feat', description: '用户通知列表页面，支持 Markdown 内容渲染' },
+      { type: 'feat', description: '用户菜单未读通知红点提示' },
+      { type: 'feat', description: '全局弹窗开关，管理员可控制是否显示落地页弹窗' },
+    ],
+  },
+  {
     version: 'v2.7.8',
     date: '2026-01-10',
     changes: [

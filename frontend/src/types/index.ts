@@ -126,4 +126,16 @@ export interface Settings {
   updated_at?: string;
 }
 
+// 通知
+export interface Notification {
+  id: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+  show_in_popup: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 

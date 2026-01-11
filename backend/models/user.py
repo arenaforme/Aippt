@@ -36,6 +36,9 @@ class User(db.Model):
     premium_quota = db.Column(db.Integer, default=0)  # 高级功能剩余配额
     quota_reset_at = db.Column(db.DateTime, nullable=True)  # 配额重置时间
 
+    # 通知相关字段
+    last_notification_read_at = db.Column(db.DateTime, nullable=True)  # 上次查看通知时间
+
     # 关联：用户的项目
     projects = db.relationship('Project', back_populates='owner', lazy='dynamic')
 

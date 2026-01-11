@@ -13,6 +13,7 @@ import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Pricing } from '@/components/landing/Pricing';
 import { FAQ } from '@/components/landing/FAQ';
 import { Footer } from '@/components/landing/Footer';
+import { NotificationPopup } from '@/components/shared';
 
 export const Landing = () => {
   const navigate = useNavigate();
@@ -37,6 +38,8 @@ export const Landing = () => {
         <FAQ />
       </main>
       <Footer />
+      {/* 通知弹窗 */}
+      <NotificationPopup />
     </div>
   );
 };

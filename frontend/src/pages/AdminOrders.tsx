@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Button, Card, Input, Loading, useToast, UserMenu } from '@/components/shared';
 import * as membershipApi from '@/api/membership';
+import { formatDate } from '@/utils/projectUtils';
 import type { AdminOrder } from '@/api/membership';
 
 // 订单状态配置
@@ -80,19 +81,6 @@ export const AdminOrders: React.FC = () => {
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
-
-  // 格式化日期
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    const date = new Date(dateStr);
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   // 获取状态配置
   const getStatusConfig = (status: string) => {
