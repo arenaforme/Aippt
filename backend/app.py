@@ -81,6 +81,7 @@ def create_app():
     # CORS configuration (parse from environment)
     raw_cors = os.getenv('CORS_ORIGINS', 'http://localhost:3000')
     if raw_cors.strip() == '*':
+        logging.warning("⚠️ CORS_ORIGINS 设置为 '*' 存在安全风险！生产环境请明确指定允许的域名。")
         cors_origins = '*'
     else:
         cors_origins = [o.strip() for o in raw_cors.split(',') if o.strip()]

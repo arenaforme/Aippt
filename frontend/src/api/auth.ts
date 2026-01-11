@@ -63,3 +63,17 @@ export const changePassword = async (
   });
   return response.data;
 };
+
+// 管理员二次认证
+export const verifyAdmin2FA = async (
+  tempToken: string,
+  code: string,
+  rememberMe: boolean = false
+): Promise<ApiResponse> => {
+  const response = await apiClient.post('/api/auth/verify-admin', {
+    temp_token: tempToken,
+    code,
+    remember_me: rememberMe,
+  });
+  return response.data;
+};

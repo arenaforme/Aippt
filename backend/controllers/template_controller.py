@@ -5,6 +5,7 @@ import logging
 from flask import Blueprint, request, current_app
 from models import db, Project, UserTemplate
 from utils import success_response, error_response, not_found, bad_request, allowed_file
+from utils.auth import login_required
 from services import FileService
 from datetime import datetime
 
@@ -15,6 +16,7 @@ user_template_bp = Blueprint('user_templates', __name__, url_prefix='/api/user-t
 
 
 @template_bp.route('/<project_id>/template', methods=['POST'])
+@login_required
 def upload_template(project_id):
     """
     POST /api/projects/{project_id}/template - Upload template image
@@ -61,6 +63,7 @@ def upload_template(project_id):
 
 
 @template_bp.route('/<project_id>/template', methods=['DELETE'])
+@login_required
 def delete_template(project_id):
     """
     DELETE /api/projects/{project_id}/template - Delete template
@@ -92,6 +95,7 @@ def delete_template(project_id):
 
 
 @template_bp.route('/templates', methods=['GET'])
+@login_required
 def get_system_templates():
     """
     GET /api/templates - Get system preset templates
@@ -109,6 +113,7 @@ def get_system_templates():
 # ========== User Template Endpoints ==========
 
 @user_template_bp.route('', methods=['POST'])
+@login_required
 def upload_user_template():
     """
     POST /api/user-templates - Upload user template image
@@ -172,6 +177,7 @@ def upload_user_template():
 
 
 @user_template_bp.route('', methods=['GET'])
+@login_required
 def list_user_templates():
     """
     GET /api/user-templates - Get list of user templates
@@ -188,6 +194,7 @@ def list_user_templates():
 
 
 @user_template_bp.route('/<template_id>', methods=['DELETE'])
+@login_required
 def delete_user_template(template_id):
     """
     DELETE /api/user-templates/{template_id} - Delete user template

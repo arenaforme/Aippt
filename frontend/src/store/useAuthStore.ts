@@ -39,6 +39,12 @@ interface AuthState {
   mustChangePassword: boolean;  // 是否需要强制修改密码
   needPhoneVerification: boolean;  // 是否需要绑定手机号
 
+  // 管理员二次认证状态
+  requires2FA: boolean;  // 是否需要二次认证
+  tempToken: string | null;  // 临时 token
+  phoneHint: string | null;  // 脱敏手机号提示
+  pending2FARememberMe: boolean;  // 二次认证时的记住我选项
+
   // Actions
   setToken: (token: string | null) => void;
   setUser: (user: User | null) => void;
@@ -47,7 +53,8 @@ interface AuthState {
   setNeedPhoneVerification: (value: boolean) => void;
 
   // 认证操作
-  login: (username: string, password: string, rememberMe?: boolean) => Promise<boolean>;
+  login: (username: string, password: string, rememberMe?: boolean) => Promise<boolean | 'requires_2fa'>;
+  verifyAdmin2FA: (code: string) => Promise<boolean>;
   register: (username: string, password: string, phone: string, code: string) => Promise<boolean>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
@@ -56,6 +63,7 @@ interface AuthState {
   // 工具方法
   isAdmin: () => boolean;
   clearAuth: () => void;
+  clear2FAState: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -70,6 +78,12 @@ export const useAuthStore = create<AuthState>()(
       mustChangePassword: false,
       needPhoneVerification: false,
 
+      // 管理员二次认证状态
+      requires2FA: false,
+      tempToken: null,
+      phoneHint: null,
+      pending2FARememberMe: false,
+
       // Setters
       setToken: (token) => set({ token, isAuthenticated: !!token }),
       setUser: (user) => set({ user }),
@@ -82,6 +96,20 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const response = await authApi.login(username, password, rememberMe);
+
+          // 检查是否需要二次认证
+          if (response.data?.requires_2fa) {
+            set({
+              requires2FA: true,
+              tempToken: response.data.temp_token,
+              phoneHint: response.data.phone_hint,
+              pending2FARememberMe: response.data.remember_me || rememberMe,
+              isLoading: false,
+            });
+            return 'requires_2fa';
+          }
+
+          // 普通登录成功
           if (response.data?.token && response.data?.user) {
             const user = response.data.user;
             const needPhoneVerification = response.data.need_phone_verification || false;
@@ -98,6 +126,40 @@ export const useAuthStore = create<AuthState>()(
           throw new Error(response.message || '登录失败');
         } catch (error: any) {
           const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || '登录失败';
+          set({ error: errorMsg, isLoading: false });
+          return false;
+        }
+      },
+
+      // 管理员二次认证
+      verifyAdmin2FA: async (code: string) => {
+        const { tempToken, pending2FARememberMe } = get();
+        if (!tempToken) {
+          set({ error: '临时令牌已失效，请重新登录' });
+          return false;
+        }
+
+        set({ isLoading: true, error: null });
+        try {
+          const response = await authApi.verifyAdmin2FA(tempToken, code, pending2FARememberMe);
+          if (response.data?.token && response.data?.user) {
+            const user = response.data.user;
+            set({
+              token: response.data.token,
+              user: user,
+              isAuthenticated: true,
+              isLoading: false,
+              // 清除二次认证状态
+              requires2FA: false,
+              tempToken: null,
+              phoneHint: null,
+              pending2FARememberMe: false,
+            });
+            return true;
+          }
+          throw new Error(response.message || '验证失败');
+        } catch (error: any) {
+          const errorMsg = error.response?.data?.error?.message || error.response?.data?.message || error.message || '验证失败';
           set({ error: errorMsg, isLoading: false });
           return false;
         }
@@ -192,6 +254,22 @@ export const useAuthStore = create<AuthState>()(
           error: null,
           mustChangePassword: false,
           needPhoneVerification: false,
+          // 同时清除二次认证状态
+          requires2FA: false,
+          tempToken: null,
+          phoneHint: null,
+          pending2FARememberMe: false,
+        });
+      },
+
+      // 清除二次认证状态（用于取消二次认证）
+      clear2FAState: () => {
+        set({
+          requires2FA: false,
+          tempToken: null,
+          phoneHint: null,
+          pending2FARememberMe: false,
+          error: null,
         });
       },
     }),

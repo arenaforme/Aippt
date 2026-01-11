@@ -16,6 +16,7 @@ class AuthService:
     # Token 过期时间配置
     TOKEN_EXPIRE_HOURS = 24  # 普通登录 24 小时
     TOKEN_EXPIRE_DAYS_REMEMBER = 7  # "记住我" 7 天
+    TEMP_TOKEN_EXPIRE_MINUTES = 5  # 临时 token 5 分钟（用于二次认证）
 
     # 账户锁定配置
     MAX_LOGIN_ATTEMPTS = 5  # 最大登录尝试次数
@@ -121,7 +122,12 @@ class AuthService:
         user.last_login_at = datetime.utcnow()
         db.session.commit()
 
-        # 生成 token
+        # 管理员需要二次认证
+        if user.role == 'admin':
+            cls._log_login_attempt(user.id, username, ip_address, True, '管理员登录，需要二次认证')
+            return True, None, '需要二次认证', user
+
+        # 普通用户直接生成 token
         token = cls.generate_token(user, remember_me)
         cls._log_login_attempt(user.id, username, ip_address, True, '登录成功')
 
@@ -338,3 +344,61 @@ class AuthService:
         )
 
         return True, '手机号绑定成功'
+
+    @classmethod
+    def generate_temp_token(cls, user: User) -> str:
+        """
+        生成临时 token（用于管理员二次认证）
+
+        Args:
+            user: 用户对象
+
+        Returns:
+            临时 JWT token
+        """
+        secret_key = current_app.config.get('SECRET_KEY', 'default-secret-key')
+        payload = {
+            'user_id': user.id,
+            'type': 'admin_2fa',  # 标记为二次认证临时 token
+            'exp': datetime.utcnow() + timedelta(minutes=cls.TEMP_TOKEN_EXPIRE_MINUTES),
+            'iat': datetime.utcnow()
+        }
+        return jwt.encode(payload, secret_key, algorithm='HS256')
+
+    @classmethod
+    def verify_temp_token(cls, temp_token: str) -> Tuple[bool, Optional[str], str]:
+        """
+        验证临时 token
+
+        Args:
+            temp_token: 临时 JWT token
+
+        Returns:
+            (是否有效, user_id 或 None, 错误信息)
+        """
+        try:
+            secret_key = current_app.config.get('SECRET_KEY', 'default-secret-key')
+            payload = jwt.decode(temp_token, secret_key, algorithms=['HS256'])
+            # 检查是否为二次认证临时 token
+            if payload.get('type') != 'admin_2fa':
+                return False, None, '无效的临时令牌类型'
+            return True, payload.get('user_id'), ''
+        except jwt.ExpiredSignatureError:
+            return False, None, '临时令牌已过期，请重新登录'
+        except jwt.InvalidTokenError as e:
+            return False, None, f'无效的临时令牌: {str(e)}'
+
+    @classmethod
+    def mask_phone(cls, phone: str) -> str:
+        """
+        隐藏手机号中间四位
+
+        Args:
+            phone: 手机号
+
+        Returns:
+            隐藏后的手机号，如 138****1234
+        """
+        if not phone or len(phone) < 7:
+            return phone
+        return f"{phone[:3]}****{phone[-4:]}"

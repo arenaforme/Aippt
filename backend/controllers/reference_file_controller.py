@@ -5,7 +5,7 @@ import os
 import logging
 import re
 import uuid
-from flask import Blueprint, request, current_app
+from flask import Blueprint, request, current_app, g
 from werkzeug.utils import secure_filename
 from pathlib import Path
 from config import Config
@@ -15,6 +15,7 @@ import threading
 
 from models import db, ReferenceFile, Project
 from utils.response import success_response, error_response, bad_request, not_found
+from utils.auth import login_required
 from services.file_parser_service import FileParserService
 
 logger = logging.getLogger(__name__)
@@ -103,6 +104,7 @@ def _parse_file_async(file_id: str, file_path: str, filename: str, app):
 
 
 @reference_file_bp.route('/upload', methods=['POST'])
+@login_required
 def upload_reference_file():
     """
     POST /api/reference-files/upload - Upload a reference file
@@ -211,6 +213,7 @@ def upload_reference_file():
 
 
 @reference_file_bp.route('/<file_id>', methods=['GET'])
+@login_required
 def get_reference_file(file_id):
     """
     GET /api/reference-files/<file_id> - Get reference file information
@@ -232,6 +235,7 @@ def get_reference_file(file_id):
 
 
 @reference_file_bp.route('/<file_id>', methods=['DELETE'])
+@login_required
 def delete_reference_file(file_id):
     """
     DELETE /api/reference-files/<file_id> - Delete a reference file
@@ -268,6 +272,7 @@ def delete_reference_file(file_id):
 
 
 @reference_file_bp.route('/project/<project_id>', methods=['GET'])
+@login_required
 def list_project_reference_files(project_id):
     """
     GET /api/reference-files/project/<project_id> - List all reference files for a project
@@ -306,6 +311,7 @@ def list_project_reference_files(project_id):
 
 
 @reference_file_bp.route('/<file_id>/parse', methods=['POST'])
+@login_required
 def trigger_file_parse(file_id):
     """
     POST /api/reference-files/<file_id>/parse - Trigger parsing for a reference file
@@ -362,6 +368,7 @@ def trigger_file_parse(file_id):
 
 
 @reference_file_bp.route('/<file_id>/associate', methods=['POST'])
+@login_required
 def associate_file_to_project(file_id):
     """
     POST /api/reference-files/<file_id>/associate - Associate a reference file to a project
@@ -405,6 +412,7 @@ def associate_file_to_project(file_id):
 
 
 @reference_file_bp.route('/<file_id>/dissociate', methods=['POST'])
+@login_required
 def dissociate_file_from_project(file_id):
     """
     POST /api/reference-files/<file_id>/dissociate - Remove a reference file from its project

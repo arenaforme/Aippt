@@ -4,6 +4,7 @@ Material Controller - handles standalone material image generation
 from flask import Blueprint, request, current_app
 from models import db, Project, Material, Task
 from utils import success_response, error_response, not_found, bad_request
+from utils.auth import login_required, feature_required
 from services import AIService, FileService
 from services.task_manager import task_manager, generate_material_image_task
 from pathlib import Path
@@ -140,6 +141,7 @@ def _save_material_file(file, target_project_id: Optional[str]):
 
 
 @material_bp.route('/<project_id>/materials/generate', methods=['POST'])
+@feature_required('generate_image', consume_quota=True)
 def generate_material_image(project_id):
     """
     POST /api/projects/{project_id}/materials/generate - Generate a standalone material image
@@ -266,6 +268,7 @@ def generate_material_image(project_id):
 
 
 @material_bp.route('/<project_id>/materials', methods=['GET'])
+@login_required
 def list_materials(project_id):
     """
     GET /api/projects/{project_id}/materials - List materials for a specific project
@@ -288,6 +291,7 @@ def list_materials(project_id):
 
 
 @material_bp.route('/<project_id>/materials/upload', methods=['POST'])
+@login_required
 def upload_material(project_id):
     """
     POST /api/projects/{project_id}/materials/upload - Upload a material image
@@ -303,6 +307,7 @@ def upload_material(project_id):
 
 
 @material_global_bp.route('', methods=['GET'])
+@login_required
 def list_all_materials():
     """
     GET /api/materials - Global materials endpoint for complex queries
@@ -332,6 +337,7 @@ def list_all_materials():
 
 
 @material_global_bp.route('/upload', methods=['POST'])
+@login_required
 def upload_material_global():
     """
     POST /api/materials/upload - Upload a material image (global, not bound to a project)
@@ -347,6 +353,7 @@ def upload_material_global():
 
 
 @material_global_bp.route('/<material_id>', methods=['DELETE'])
+@login_required
 def delete_material(material_id):
     """
     DELETE /api/materials/{material_id} - Delete a material and its file
@@ -378,6 +385,7 @@ def delete_material(material_id):
 
 
 @material_global_bp.route('/associate', methods=['POST'])
+@login_required
 def associate_materials_to_project():
     """
     POST /api/materials/associate - Associate materials to a project by URLs
