@@ -21,6 +21,7 @@ class SystemConfig(db.Model):
     KEY_ALLOW_REGISTRATION = 'allow_registration'
     KEY_USER_AGREEMENT = 'user_agreement'
     KEY_MEMBERSHIP_AGREEMENT = 'membership_agreement'
+    KEY_ADMIN_2FA_ENABLED = 'admin_2fa_enabled'
 
     @classmethod
     def get_value(cls, key: str, default: str = None) -> str:
@@ -52,6 +53,17 @@ class SystemConfig(db.Model):
     def set_registration_allowed(cls, allowed: bool):
         """设置是否允许用户注册"""
         cls.set_value(cls.KEY_ALLOW_REGISTRATION, 'true' if allowed else 'false')
+
+    @classmethod
+    def is_admin_2fa_enabled(cls) -> bool:
+        """检查是否启用管理员二次认证（默认开启）"""
+        value = cls.get_value(cls.KEY_ADMIN_2FA_ENABLED, 'true')
+        return value.lower() == 'true'
+
+    @classmethod
+    def set_admin_2fa_enabled(cls, enabled: bool):
+        """设置是否启用管理员二次认证"""
+        cls.set_value(cls.KEY_ADMIN_2FA_ENABLED, 'true' if enabled else 'false')
 
     def to_dict(self):
         """转换为字典"""

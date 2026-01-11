@@ -40,6 +40,10 @@ export const UserManagement: React.FC = () => {
   const [allowRegistration, setAllowRegistration] = useState<boolean>(true);
   const [isTogglingRegistration, setIsTogglingRegistration] = useState(false);
 
+  // 管理员二次认证开关状态
+  const [admin2faEnabled, setAdmin2faEnabled] = useState<boolean>(true);
+  const [isToggling2fa, setIsToggling2fa] = useState(false);
+
   // 创建用户弹窗
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newUsername, setNewUsername] = useState('');
@@ -84,6 +88,7 @@ export const UserManagement: React.FC = () => {
       const response = await getSystemConfig();
       if (response.data) {
         setAllowRegistration(response.data.allow_registration);
+        setAdmin2faEnabled(response.data.admin_2fa_enabled);
       }
     } catch (error: any) {
       console.error('加载系统配置失败:', error);
@@ -102,6 +107,21 @@ export const UserManagement: React.FC = () => {
       show({ message: '更新失败: ' + (error.response?.data?.error?.message || error.message), type: 'error' });
     } finally {
       setIsTogglingRegistration(false);
+    }
+  };
+
+  // 切换管理员二次认证开关
+  const handleToggle2fa = async () => {
+    setIsToggling2fa(true);
+    try {
+      const newValue = !admin2faEnabled;
+      await updateSystemConfig({ admin_2fa_enabled: newValue });
+      setAdmin2faEnabled(newValue);
+      show({ message: newValue ? '已开启管理员二次认证' : '已关闭管理员二次认证', type: 'success' });
+    } catch (error: any) {
+      show({ message: '更新失败: ' + (error.response?.data?.error?.message || error.message), type: 'error' });
+    } finally {
+      setIsToggling2fa(false);
     }
   };
 
@@ -358,24 +378,47 @@ export const UserManagement: React.FC = () => {
             <div className="text-sm text-gray-500">
               共 {total} 个用户，显示 {filteredUsers.length} 个
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">允许用户注册</span>
-              <button
-                onClick={handleToggleRegistration}
-                disabled={isTogglingRegistration}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  allowRegistration ? 'bg-banana-500' : 'bg-gray-300'
-                } ${isTogglingRegistration ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    allowRegistration ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className={`text-xs ${allowRegistration ? 'text-green-600' : 'text-gray-500'}`}>
-                {allowRegistration ? '已开启' : '已关闭'}
-              </span>
+            <div className="flex items-center gap-6">
+              {/* 管理员二次认证开关 */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">管理员二次认证</span>
+                <button
+                  onClick={handleToggle2fa}
+                  disabled={isToggling2fa}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    admin2faEnabled ? 'bg-banana-500' : 'bg-gray-300'
+                  } ${isToggling2fa ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      admin2faEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-xs ${admin2faEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+                  {admin2faEnabled ? '已开启' : '已关闭'}
+                </span>
+              </div>
+              {/* 允许用户注册开关 */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">允许用户注册</span>
+                <button
+                  onClick={handleToggleRegistration}
+                  disabled={isTogglingRegistration}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    allowRegistration ? 'bg-banana-500' : 'bg-gray-300'
+                  } ${isTogglingRegistration ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      allowRegistration ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className={`text-xs ${allowRegistration ? 'text-green-600' : 'text-gray-500'}`}>
+                  {allowRegistration ? '已开启' : '已关闭'}
+                </span>
+              </div>
             </div>
           </div>
 

@@ -930,6 +930,7 @@ export const resetUserPassword = async (
 export interface SystemConfigResponse {
   configs: Record<string, string>;
   allow_registration: boolean;
+  admin_2fa_enabled: boolean;
 }
 
 /**
@@ -945,8 +946,9 @@ export const getSystemConfig = async (): Promise<ApiResponse<SystemConfigRespons
  */
 export const updateSystemConfig = async (data: {
   allow_registration?: boolean;
-}): Promise<ApiResponse<{ allow_registration: boolean }>> => {
-  const response = await apiClient.put<ApiResponse<{ allow_registration: boolean }>>(
+  admin_2fa_enabled?: boolean;
+}): Promise<ApiResponse<{ allow_registration: boolean; admin_2fa_enabled: boolean }>> => {
+  const response = await apiClient.put<ApiResponse<{ allow_registration: boolean; admin_2fa_enabled: boolean }>>(
     '/api/admin/config',
     data
   );

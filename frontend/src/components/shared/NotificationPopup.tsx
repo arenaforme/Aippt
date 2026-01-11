@@ -118,6 +118,9 @@ export const NotificationPopup: React.FC<NotificationPopupProps> = ({ onClose })
           {/* 内容 */}
           <div className="px-6 py-5 min-h-[200px] max-h-[60vh] overflow-y-auto">
             <Markdown>{current.content}</Markdown>
+            <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400">
+              发布于 {new Date(current.created_at).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
           </div>
 
           {/* 底部导航（多条通知时显示） */}

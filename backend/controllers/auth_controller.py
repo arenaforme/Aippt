@@ -43,7 +43,8 @@ def login():
         return error_response('LOGIN_FAILED', message, 401)
 
     # 管理员需要二次认证（token 为 None 表示需要二次认证）
-    if success and token is None and user.role == 'admin':
+    # 仅当系统配置启用了管理员二次认证时才执行
+    if success and token is None and user.role == 'admin' and SystemConfig.is_admin_2fa_enabled():
         # 检查管理员是否绑定了手机号
         if not user.phone:
             return error_response('ADMIN_NO_PHONE', '管理员账户未绑定手机号，请联系超级管理员', 400)
@@ -65,7 +66,11 @@ def login():
             'remember_me': remember_me  # 传递给二次认证使用
         }, '请输入短信验证码完成二次认证')
 
-    # 普通用户登录成功
+    # 管理员二次认证关闭时，直接生成 token
+    if success and token is None and user.role == 'admin':
+        token = AuthService.generate_token(user, remember_me)
+
+    # 普通用户登录成功（或管理员二次认证关闭时）
     need_phone_verification = not user.phone
 
     return success_response({

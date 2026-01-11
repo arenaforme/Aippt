@@ -252,7 +252,8 @@ def get_system_config():
     configs = SystemConfig.query.all()
     return success_response({
         'configs': {c.key: c.value for c in configs},
-        'allow_registration': SystemConfig.is_registration_allowed()
+        'allow_registration': SystemConfig.is_registration_allowed(),
+        'admin_2fa_enabled': SystemConfig.is_admin_2fa_enabled()
     })
 
 
@@ -276,6 +277,13 @@ def update_system_config():
             SystemConfig.set_registration_allowed(new_value)
             changes.append(f'allow_registration: {old_value} -> {new_value}')
 
+    if 'admin_2fa_enabled' in data:
+        old_value = SystemConfig.is_admin_2fa_enabled()
+        new_value = bool(data['admin_2fa_enabled'])
+        if old_value != new_value:
+            SystemConfig.set_admin_2fa_enabled(new_value)
+            changes.append(f'admin_2fa_enabled: {old_value} -> {new_value}')
+
     if changes:
         AuditLog.log(
             user_id=g.current_user.id,
@@ -288,7 +296,8 @@ def update_system_config():
         )
 
     return success_response({
-        'allow_registration': SystemConfig.is_registration_allowed()
+        'allow_registration': SystemConfig.is_registration_allowed(),
+        'admin_2fa_enabled': SystemConfig.is_admin_2fa_enabled()
     }, '配置更新成功')
 
 

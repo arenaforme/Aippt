@@ -22,6 +22,22 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.8.1',
+    date: '2026-01-11',
+    changes: [
+      { type: 'feat', description: '通知弹窗显示发布时间' },
+      { type: 'feat', description: '新增管理员二次认证开关配置（用户管理页面）' },
+    ],
+  },
+  {
+    version: 'v2.8.0',
+    date: '2026-01-11',
+    changes: [
+      { type: 'feat', description: '安全加固：管理员登录二次认证（短信验证码）' },
+      { type: 'feat', description: '安全加固：API 权限控制优化' },
+    ],
+  },
+  {
     version: 'v2.7.9',
     date: '2026-01-11',
     changes: [
