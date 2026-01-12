@@ -12,7 +12,7 @@ import {
   adminGetNotificationSettings,
   adminUpdateNotificationSettings,
 } from '@/api/endpoints';
-import { Modal, Button, Input, Loading, useToast, useConfirm, Pagination } from '@/components/shared';
+import { Modal, Button, Input, Loading, useToast, useConfirm, Pagination, UserMenu } from '@/components/shared';
 import type { Notification } from '@/types';
 
 export const AdminNotifications = () => {
@@ -161,46 +161,47 @@ export const AdminNotifications = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50 flex items-center justify-center">
         <Loading />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* 返回按钮 */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft size={20} />
-          返回
-        </button>
-
-        {/* 标题和操作 */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Bell className="w-6 h-6 text-banana-600" />
-            <h1 className="text-2xl font-bold text-gray-900">通知管理</h1>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50">
+      {/* 统一导航栏 */}
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* 弹窗开关 */}
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={popupEnabled}
-                onChange={handleTogglePopup}
-                className="w-4 h-4 rounded"
-              />
-              启用落地页弹窗
-            </label>
-            <Button variant="primary" onClick={handleCreate}>
-              <Plus size={16} className="mr-1" />
-              新建通知
+            <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate(-1)}>
+              返回
             </Button>
+            <div className="flex items-center gap-2">
+              <Bell size={24} className="text-banana-600" />
+              <h1 className="text-xl font-bold text-gray-900">通知管理</h1>
+            </div>
           </div>
+          <UserMenu />
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* 操作栏 */}
+        <div className="flex items-center justify-end gap-4 mb-6">
+          {/* 弹窗开关 */}
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={popupEnabled}
+              onChange={handleTogglePopup}
+              className="w-4 h-4 rounded"
+            />
+            启用落地页弹窗
+          </label>
+          <Button variant="primary" onClick={handleCreate}>
+            <Plus size={16} className="mr-1" />
+            新建通知
+          </Button>
         </div>
 
         {/* 通知列表 */}

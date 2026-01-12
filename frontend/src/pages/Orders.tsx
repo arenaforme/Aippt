@@ -4,7 +4,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, FileText, Clock, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileText, Clock, CheckCircle, XCircle, AlertCircle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Button, Card, Loading, useToast, UserMenu } from '@/components/shared';
 import * as membershipApi from '@/api/membership';
 import { formatDate } from '@/utils/projectUtils';
@@ -84,32 +84,24 @@ export const Orders: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50">
+      {/* 顶栏 */}
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
-              <Home size={18} />
-              <span className="ml-1">首页</span>
+            <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate('/admin/users')}>
+              返回用户管理
             </Button>
-            <h1 className="text-lg font-semibold text-gray-800">订单记录</h1>
+            <div className="flex items-center gap-2">
+              <FileText size={24} className="text-banana-600" />
+              <h1 className="text-xl font-bold text-gray-900">订单记录</h1>
+            </div>
           </div>
           <UserMenu />
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* 返回会员中心 */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mb-4"
-          onClick={() => navigate('/membership')}
-        >
-          <ChevronLeft size={16} />
-          <span>返回会员中心</span>
-        </Button>
 
         {loading ? (
           <div className="flex justify-center py-12">

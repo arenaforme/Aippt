@@ -30,5 +30,6 @@ export { MembershipAgreementModal } from './MembershipAgreementModal';
 export { SmsCodeInput } from './SmsCodeInput';
 export { NotificationPopup } from './NotificationPopup';
 export { Pagination } from './Pagination';
+export { ImagePreviewModal } from './ImagePreviewModal';
 
 

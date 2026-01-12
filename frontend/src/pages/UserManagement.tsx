@@ -331,7 +331,7 @@ export const UserManagement: React.FC = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate('/')}>
-              返回首页
+              返回
             </Button>
             <div className="flex items-center gap-2">
               <Shield size={24} className="text-banana-600" />

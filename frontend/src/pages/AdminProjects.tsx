@@ -104,16 +104,18 @@ export const AdminProjects: React.FC = () => {
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-banana-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50">
       {/* 顶部导航 */}
-      <header className="bg-white shadow-sm border-b border-banana-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft size={20} />
+            <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate(-1)}>
+              返回
             </Button>
-            <h1 className="text-xl font-semibold text-gray-900">项目管理</h1>
-            <span className="text-sm text-gray-500">共 {total} 个项目</span>
+            <div className="flex items-center gap-2">
+              <FolderOpen size={24} className="text-banana-600" />
+              <h1 className="text-xl font-bold text-gray-900">项目管理</h1>
+            </div>
           </div>
           <UserMenu />
         </div>

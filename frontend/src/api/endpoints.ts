@@ -611,7 +611,10 @@ export const associateMaterialsToProject = async (
 export interface UserTemplate {
   template_id: string;
   name?: string;
+  is_preset?: boolean;
   template_image_url: string;
+  user_id?: string;
+  username?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -637,7 +640,7 @@ export const uploadUserTemplate = async (
 };
 
 /**
- * 获取用户模板列表
+ * 获取用户模板列表（预设模板 + 当前用户的模板）
  */
 export const listUserTemplates = async (): Promise<ApiResponse<{ templates: UserTemplate[] }>> => {
   const response = await apiClient.get<ApiResponse<{ templates: UserTemplate[] }>>(
@@ -647,10 +650,102 @@ export const listUserTemplates = async (): Promise<ApiResponse<{ templates: User
 };
 
 /**
- * 删除用户模板
+ * 删除用户模板（只能删除自己的模板）
  */
 export const deleteUserTemplate = async (templateId: string): Promise<ApiResponse> => {
   const response = await apiClient.delete<ApiResponse>(`/api/user-templates/${templateId}`);
+  return response.data;
+};
+
+// ===== 管理员预设模板 API =====
+
+/**
+ * 获取预设模板列表（管理员）
+ */
+export const adminListPresetTemplates = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<ApiResponse<{ templates: UserTemplate[]; total: number }>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+
+  const response = await apiClient.get<ApiResponse<{ templates: UserTemplate[]; total: number }>>(
+    `/api/admin/preset-templates?${searchParams.toString()}`
+  );
+  return response.data;
+};
+
+/**
+ * 上传预设模板（管理员）
+ */
+export const adminCreatePresetTemplate = async (
+  templateImage: File,
+  name: string
+): Promise<ApiResponse<{ template: UserTemplate; message: string }>> => {
+  const formData = new FormData();
+  formData.append('template_image', templateImage);
+  formData.append('name', name);
+
+  const response = await apiClient.post<ApiResponse<{ template: UserTemplate; message: string }>>(
+    '/api/admin/preset-templates',
+    formData
+  );
+  return response.data;
+};
+
+/**
+ * 删除预设模板（管理员）
+ */
+export const adminDeletePresetTemplate = async (templateId: string): Promise<ApiResponse<{ message: string }>> => {
+  const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+    `/api/admin/preset-templates/${templateId}`
+  );
+  return response.data;
+};
+
+// ===== 管理员用户模板管理 API =====
+
+/**
+ * 获取所有用户的模板列表（管理员）
+ */
+export const adminListUserTemplates = async (params?: {
+  limit?: number;
+  offset?: number;
+  user_id?: string;
+}): Promise<ApiResponse<{ templates: UserTemplate[]; total: number }>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+  if (params?.user_id) searchParams.append('user_id', params.user_id);
+
+  const response = await apiClient.get<ApiResponse<{ templates: UserTemplate[]; total: number }>>(
+    `/api/admin/user-templates?${searchParams.toString()}`
+  );
+  return response.data;
+};
+
+/**
+ * 删除用户模板（管理员）
+ */
+export const adminDeleteUserTemplate = async (templateId: string): Promise<ApiResponse<{ message: string }>> => {
+  const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+    `/api/admin/user-templates/${templateId}`
+  );
+  return response.data;
+};
+
+/**
+ * 复制用户模板为预设模板（管理员）
+ */
+export const adminCopyUserTemplateToPreset = async (
+  templateId: string,
+  name: string
+): Promise<ApiResponse<{ template: UserTemplate; message: string }>> => {
+  const response = await apiClient.post<ApiResponse<{ template: UserTemplate; message: string }>>(
+    `/api/admin/user-templates/${templateId}/copy-to-preset`,
+    { name }
+  );
   return response.data;
 };
 

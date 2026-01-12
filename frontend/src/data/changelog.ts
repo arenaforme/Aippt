@@ -22,6 +22,16 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.10.0',
+    date: '2026-01-12',
+    changes: [
+      { type: 'feat', description: '新增预设模板管理和用户模板管理功能' },
+      { type: 'feat', description: '支持管理员复制用户模板为预设模板' },
+      { type: 'perf', description: '优化模板选择交互体验' },
+      { type: 'perf', description: '统一管理后台页面导航样式' },
+    ],
+  },
+  {
     version: 'v2.9.0',
     date: '2026-01-12',
     changes: [

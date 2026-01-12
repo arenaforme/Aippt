@@ -4,7 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap, User, Bell } from 'lucide-react';
+import { LogOut, Shield, ChevronDown, Users, Key, Eye, EyeOff, FolderOpen, FileText, Crown, Image, Zap, User, Bell, Layout } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Modal } from './Modal';
 import { Input } from './Input';
@@ -310,6 +310,28 @@ export const UserMenu: React.FC = () => {
               >
                 <Bell size={16} />
                 通知管理
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/admin/preset-templates');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              >
+                <Layout size={16} />
+                预设模板
+              </button>
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate('/admin/user-templates');
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700
+                  hover:bg-banana-50 hover:text-banana-700 rounded-lg transition-colors duration-150"
+              >
+                <Image size={16} />
+                用户模板
               </button>
             </div>
           )}

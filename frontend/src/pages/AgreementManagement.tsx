@@ -80,34 +80,27 @@ export const AgreementManagement: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-banana-50 to-yellow-50">
       <ToastContainer />
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <Card className="p-6">
-          {/* 顶部标题 */}
-          <div className="flex items-center justify-between pb-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <Button
-                variant="secondary"
-                icon={<ArrowLeft size={18} />}
-                onClick={() => navigate('/admin/users')}
-                className="mr-4"
-              >
-                返回
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                  <FileText className="mr-2" size={24} />
-                  协议管理
-                </h1>
-                <p className="text-sm text-gray-500 mt-1">
-                  编辑用户协议和会员协议内容（支持 Markdown 格式）
-                </p>
-              </div>
+      {/* 顶栏 */}
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 md:px-6 py-3">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" icon={<ArrowLeft size={18} />} onClick={() => navigate('/admin/users')}>
+              返回用户管理
+            </Button>
+            <div className="flex items-center gap-2">
+              <FileText size={24} className="text-banana-600" />
+              <h1 className="text-xl font-bold text-gray-900">协议管理</h1>
             </div>
-            <UserMenu />
           </div>
+          <UserMenu />
+        </div>
+      </header>
 
+      {/* 主内容 */}
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6">
+        <Card className="p-6">
           {/* Tab 切换 */}
-          <div className="flex border-b border-gray-200 mt-6">
+          <div className="flex border-b border-gray-200">
             <button
               onClick={() => setActiveTab('user_agreement')}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -189,7 +182,7 @@ export const AgreementManagement: React.FC = () => {
             </Button>
           </div>
         </Card>
-      </div>
+      </main>
     </div>
   );
 };

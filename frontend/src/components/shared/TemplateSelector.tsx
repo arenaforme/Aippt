@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Button, useToast, MaterialSelector } from '@/components/shared';
+import { Button, useToast, MaterialSelector, ImagePreviewModal } from '@/components/shared';
 import { getImageUrl } from '@/api/client';
 import { listUserTemplates, uploadUserTemplate, deleteUserTemplate, type UserTemplate } from '@/api/endpoints';
 import { materialUrlToFile } from '@/components/shared/MaterialSelector';
 import type { Material } from '@/api/endpoints';
-import { ImagePlus, X } from 'lucide-react';
-
-const presetTemplates = [
-  { id: '1', name: '复古卷轴', preview: '/templates/template_y.png' },
-  { id: '2', name: '矢量插画', preview: '/templates/template_vector_illustration.png' },
-  { id: '3', name: '拟物玻璃', preview: '/templates/template_glass.png' },
-  
-  { id: '4', name: '科技蓝', preview: '/templates/template_b.png' },
-  { id: '5', name: '简约商务', preview: '/templates/template_s.png' },
-  { id: '6', name: '学术报告', preview: '/templates/template_academic.jpg' },
-];
+import { ImagePlus, X, Shield, ZoomIn, Check } from 'lucide-react';
 
 interface TemplateSelectorProps {
   onSelect: (templateFile: File | null, templateId?: string) => void;
@@ -35,8 +25,11 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
   const [isMaterialSelectorOpen, setIsMaterialSelectorOpen] = useState(false);
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
-  const [saveToLibrary, setSaveToLibrary] = useState(true); // 上传模板时是否保存到模板库（默认勾选）
+  const [saveToLibrary, setSaveToLibrary] = useState(true);
   const { show, ToastContainer } = useToast();
+
+  // 图片预览状态
+  const [previewImage, setPreviewImage] = useState<{ url: string; title?: string } | null>(null);
 
   // 加载用户模板列表
   useEffect(() => {
@@ -57,12 +50,15 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     }
   };
 
+  // 分离预设模板和用户模板
+  const presetTemplates = userTemplates.filter(t => t.is_preset);
+  const myTemplates = userTemplates.filter(t => !t.is_preset);
+
   const handleTemplateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
         if (showUpload) {
-          // 主页模式：直接上传到用户模板库
           const response = await uploadUserTemplate(file);
           if (response.data) {
             const template = response.data;
@@ -71,9 +67,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             show({ message: '模板上传成功', type: 'success' });
           }
         } else {
-          // 预览页模式：根据 saveToLibrary 状态决定是否保存到模板库
           if (saveToLibrary) {
-            // 保存到模板库并应用
             const response = await uploadUserTemplate(file);
             if (response.data) {
               const template = response.data;
@@ -82,7 +76,6 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               show({ message: '模板已保存到模板库', type: 'success' });
             }
           } else {
-            // 仅应用到项目
             onSelect(file);
           }
         }
@@ -91,41 +84,28 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         show({ message: '模板上传失败: ' + (error.message || '未知错误'), type: 'error' });
       }
     }
-    // 清空 input，允许重复选择同一文件
     e.target.value = '';
   };
 
   const handleSelectUserTemplate = (template: UserTemplate) => {
-    // 立即更新选择状态（不加载File，提升响应速度）
     onSelect(null, template.template_id);
-  };
-
-  const handleSelectPresetTemplate = (templateId: string, preview: string) => {
-    if (!preview) return;
-    // 立即更新选择状态（不加载File，提升响应速度）
-    onSelect(null, templateId);
   };
 
   const handleSelectMaterials = async (materials: Material[], saveAsTemplate?: boolean) => {
     if (materials.length === 0) return;
-    
+
     try {
-      // 将第一个素材转换为File对象
       const file = await materialUrlToFile(materials[0]);
-      
-      // 根据 saveAsTemplate 参数决定是否保存到模板库
+
       if (saveAsTemplate) {
-        // 保存到用户模板库
         const response = await uploadUserTemplate(file);
         if (response.data) {
           const template = response.data;
           setUserTemplates(prev => [template, ...prev]);
-          // 传递文件和模板ID，适配不同的使用场景
           onSelect(file, template.template_id);
           show({ message: '素材已保存到模板库', type: 'success' });
         }
       } else {
-        // 仅作为模板使用
         onSelect(file);
         show({ message: '已从素材库选择作为模板', type: 'success' });
       }
@@ -154,86 +134,147 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     }
   };
 
+  // 点击缩略图预览大图
+  const handlePreview = (imageUrl: string, title?: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setPreviewImage({ url: imageUrl, title });
+  };
+
   return (
     <>
       <div className="space-y-4">
-        {/* 用户已保存的模板 */}
-        {userTemplates.length > 0 && (
+        {/* 预设模板（来自数据库） */}
+        {presetTemplates.length > 0 && (
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">我的模板</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+              <Shield size={14} className="text-banana-600" />
+              预设模板
+            </h4>
             <div className="grid grid-cols-4 gap-4 mb-4">
-              {userTemplates.map((template) => (
-                <div
-                  key={template.template_id}
-                  onClick={() => handleSelectUserTemplate(template)}
-                  className={`aspect-[4/3] rounded-lg border-2 cursor-pointer transition-all relative group ${
-                    selectedTemplateId === template.template_id
-                      ? 'border-banana-500 ring-2 ring-banana-200'
-                      : 'border-gray-200 hover:border-banana-300'
-                  }`}
-                >
-                  <img
-                    src={getImageUrl(template.template_image_url)}
-                    alt={template.name || 'Template'}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                  {/* 删除按钮：仅用户模板，且未被选中时显示（常显） */}
-                  {selectedTemplateId !== template.template_id && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleDeleteUserTemplate(template, e)}
-                      disabled={deletingTemplateId === template.template_id}
-                      className={`absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow z-20 opacity-0 group-hover:opacity-100 transition-opacity ${
-                        deletingTemplateId === template.template_id ? 'opacity-60 cursor-not-allowed' : ''
+              {presetTemplates.map((template) => {
+                const isSelected = selectedTemplateId === template.template_id;
+                return (
+                  <div
+                    key={template.template_id}
+                    className="flex flex-col"
+                  >
+                    {/* 缩略图容器 */}
+                    <div
+                      onClick={() => handleSelectUserTemplate(template)}
+                      className={`aspect-[4/3] rounded-lg border-2 cursor-pointer transition-all relative group ${
+                        isSelected
+                          ? 'border-banana-500 ring-2 ring-banana-200'
+                          : 'border-gray-200 hover:border-banana-300'
                       }`}
-                      aria-label="删除模板"
                     >
-                      <X size={12} />
-                    </button>
-                  )}
-                  {selectedTemplateId === template.template_id && (
-                    <div className="absolute inset-0 bg-banana-500 bg-opacity-20 flex items-center justify-center pointer-events-none">
-                      <span className="text-white font-semibold text-sm">已选择</span>
+                      <img
+                        src={getImageUrl(template.template_image_url)}
+                        alt={template.name || 'Template'}
+                        className="absolute inset-0 w-full h-full object-cover rounded-md"
+                      />
+                      {/* 官方标签 */}
+                      <span className="absolute top-1 left-1 px-1.5 py-0.5 bg-banana-500 text-white text-xs rounded">
+                        官方
+                      </span>
+                      {/* 预览按钮 - hover时显示 */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePreview(getImageUrl(template.template_image_url), template.name);
+                        }}
+                        className="absolute top-1 right-1 w-6 h-6 bg-black/60 text-white rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                        aria-label="预览大图"
+                      >
+                        <ZoomIn size={14} />
+                      </button>
+                      {/* 选中状态遮罩 */}
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-banana-500/20 flex items-center justify-center pointer-events-none rounded-md">
+                          <div className="w-8 h-8 bg-banana-500 rounded-full flex items-center justify-center">
+                            <Check size={18} className="text-white" />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                    {/* 模板名称 - 显示在缩略图下方 */}
+                    <p className="mt-1.5 text-xs text-gray-600 text-center truncate" title={template.name}>
+                      {template.name || '未命名'}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
+        {/* 我的模板 */}
         <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-2">预设模板</h4>
+          <h4 className="text-sm font-medium text-gray-700 mb-2">我的模板</h4>
           <div className="grid grid-cols-4 gap-4">
-            {/* 预设模板 */}
-            {presetTemplates.map((template) => (
-              <div
-                key={template.id}
-                onClick={() => template.preview && handleSelectPresetTemplate(template.id, template.preview)}
-                className={`aspect-[4/3] rounded-lg border-2 cursor-pointer transition-all bg-gray-100 flex items-center justify-center relative ${
-                  selectedPresetTemplateId === template.id
-                    ? 'border-banana-500 ring-2 ring-banana-200'
-                    : 'border-gray-200 hover:border-banana-500'
-                }`}
-              >
-                {template.preview ? (
-                  <>
+            {myTemplates.map((template) => {
+              const isSelected = selectedTemplateId === template.template_id;
+              return (
+                <div
+                  key={template.template_id}
+                  className="flex flex-col"
+                >
+                  {/* 缩略图容器 */}
+                  <div
+                    onClick={() => handleSelectUserTemplate(template)}
+                    className={`aspect-[4/3] rounded-lg border-2 cursor-pointer transition-all relative group ${
+                      isSelected
+                        ? 'border-banana-500 ring-2 ring-banana-200'
+                        : 'border-gray-200 hover:border-banana-300'
+                    }`}
+                  >
                     <img
-                      src={template.preview}
-                      alt={template.name}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      src={getImageUrl(template.template_image_url)}
+                      alt={template.name || 'Template'}
+                      className="absolute inset-0 w-full h-full object-cover rounded-md"
                     />
-                    {selectedPresetTemplateId === template.id && (
-                      <div className="absolute inset-0 bg-banana-500 bg-opacity-20 flex items-center justify-center pointer-events-none">
-                        <span className="text-white font-semibold text-sm">已选择</span>
+                    {/* 预览按钮 - hover时显示 */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePreview(getImageUrl(template.template_image_url), template.name);
+                      }}
+                      className="absolute top-1 right-1 w-6 h-6 bg-black/60 text-white rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80"
+                      aria-label="预览大图"
+                    >
+                      <ZoomIn size={14} />
+                    </button>
+                    {/* 删除按钮：仅用户模板，且未被选中时显示 */}
+                    {!isSelected && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteUserTemplate(template, e)}
+                        disabled={deletingTemplateId === template.template_id}
+                        className={`absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow z-20 opacity-0 group-hover:opacity-100 transition-opacity ${
+                          deletingTemplateId === template.template_id ? 'opacity-60 cursor-not-allowed' : ''
+                        }`}
+                        aria-label="删除模板"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                    {/* 选中状态遮罩 */}
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-banana-500/20 flex items-center justify-center pointer-events-none rounded-md">
+                        <div className="w-8 h-8 bg-banana-500 rounded-full flex items-center justify-center">
+                          <Check size={18} className="text-white" />
+                        </div>
                       </div>
                     )}
-                  </>
-                ) : (
-                  <span className="text-sm text-gray-500">{template.name}</span>
-                )}
-              </div>
-            ))}
+                  </div>
+                  {/* 模板名称占位（用户模板可能没有名称） */}
+                  <p className="mt-1.5 text-xs text-gray-400 text-center truncate h-4">
+                    {template.name || ''}
+                  </p>
+                </div>
+              );
+            })}
 
             {/* 上传新模板 */}
             <label className="aspect-[4/3] rounded-lg border-2 border-dashed border-gray-300 hover:border-banana-500 cursor-pointer transition-all flex flex-col items-center justify-center gap-2 relative overflow-hidden">
@@ -248,7 +289,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
               />
             </label>
           </div>
-          
+
           {/* 在预览页显示：上传模板时是否保存到模板库的选项 */}
           {!showUpload && (
             <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -295,6 +336,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           showSaveAsTemplateOption={true}
         />
       )}
+      {/* 图片预览弹窗 */}
+      <ImagePreviewModal
+        isOpen={!!previewImage}
+        onClose={() => setPreviewImage(null)}
+        imageUrl={previewImage?.url || ''}
+        title={previewImage?.title}
+      />
     </>
   );
 };
@@ -309,33 +357,19 @@ export const getTemplateFile = async (
   templateId: string,
   userTemplates: UserTemplate[]
 ): Promise<File | null> => {
-  // 检查是否是预设模板
-  const presetTemplate = presetTemplates.find(t => t.id === templateId);
-  if (presetTemplate && presetTemplate.preview) {
+  // 检查是否是用户模板或预设模板
+  const template = userTemplates.find(t => t.template_id === templateId);
+  if (template) {
     try {
-      const response = await fetch(presetTemplate.preview);
-      const blob = await response.blob();
-      return new File([blob], presetTemplate.preview.split('/').pop() || 'template.png', { type: blob.type });
-    } catch (error) {
-      console.error('加载预设模板失败:', error);
-      return null;
-    }
-  }
-
-  // 检查是否是用户模板
-  const userTemplate = userTemplates.find(t => t.template_id === templateId);
-  if (userTemplate) {
-    try {
-      const imageUrl = getImageUrl(userTemplate.template_image_url);
+      const imageUrl = getImageUrl(template.template_image_url);
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       return new File([blob], 'template.png', { type: blob.type });
     } catch (error) {
-      console.error('加载用户模板失败:', error);
+      console.error('加载模板失败:', error);
       return null;
     }
   }
 
   return null;
 };
-

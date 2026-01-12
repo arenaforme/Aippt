@@ -22,6 +22,8 @@ import { AdminOrders } from './pages/AdminOrders';
 import { AgreementManagement } from './pages/AgreementManagement';
 import { Notifications } from './pages/Notifications';
 import { AdminNotifications } from './pages/AdminNotifications';
+import { AdminPresetTemplates } from './pages/AdminPresetTemplates';
+import { AdminUserTemplates } from './pages/AdminUserTemplates';
 import PdfToPptx from './pages/PdfToPptx';
 import { useProjectStore } from './store/useProjectStore';
 import { useAuthStore } from './store/useAuthStore';
@@ -87,6 +89,8 @@ function App() {
         <Route path="/admin/orders" element={<ProtectedRoute requireAdmin><AdminOrders /></ProtectedRoute>} />
         <Route path="/admin/agreements" element={<ProtectedRoute requireAdmin><AgreementManagement /></ProtectedRoute>} />
         <Route path="/admin/notifications" element={<ProtectedRoute requireAdmin><AdminNotifications /></ProtectedRoute>} />
+        <Route path="/admin/preset-templates" element={<ProtectedRoute requireAdmin><AdminPresetTemplates /></ProtectedRoute>} />
+        <Route path="/admin/user-templates" element={<ProtectedRoute requireAdmin><AdminUserTemplates /></ProtectedRoute>} />
 
         {/* 工具路由 */}
         <Route path="/tools/pdf-to-pptx" element={<ProtectedRoute><PdfToPptx /></ProtectedRoute>} />

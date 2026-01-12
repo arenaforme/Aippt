@@ -34,6 +34,7 @@ from controllers.order_controller import order_bp
 from controllers.payment_callback_controller import payment_callback_bp
 from controllers.notification_controller import notification_bp
 from controllers import project_bp, page_bp, template_bp, user_template_bp, export_bp, file_bp
+from controllers import admin_preset_template_bp, admin_user_template_bp
 
 
 # Enable SQLite WAL mode for all connections
@@ -117,6 +118,8 @@ def create_app():
     app.register_blueprint(page_bp)
     app.register_blueprint(template_bp)
     app.register_blueprint(user_template_bp)
+    app.register_blueprint(admin_preset_template_bp)
+    app.register_blueprint(admin_user_template_bp)
     app.register_blueprint(export_bp)
     app.register_blueprint(file_bp)
     app.register_blueprint(material_bp)
