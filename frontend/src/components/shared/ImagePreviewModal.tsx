@@ -2,6 +2,7 @@
  * 图片预览弹窗组件
  */
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ImagePreviewModalProps {
@@ -29,9 +30,10 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  // 使用 Portal 渲染到 body，避免父容器 transform 影响 fixed 定位
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70"
       onClick={onClose}
     >
       <div
@@ -58,6 +60,7 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
           <p className="mt-3 text-center text-white text-sm">{title}</p>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

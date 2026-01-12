@@ -22,6 +22,14 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.10.2',
+    date: '2026-01-12',
+    changes: [
+      { type: 'fix', description: '修复模板预览图显示不全的问题' },
+      { type: 'perf', description: '优化我的模板删除按钮位置，避免误操作' },
+    ],
+  },
+  {
     version: 'v2.10.1',
     date: '2026-01-12',
     changes: [

@@ -245,13 +245,13 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
                     >
                       <ZoomIn size={14} />
                     </button>
-                    {/* 删除按钮：仅用户模板，且未被选中时显示 */}
+                    {/* 删除按钮：仅用户模板，且未被选中时显示 - 左上角 */}
                     {!isSelected && (
                       <button
                         type="button"
                         onClick={(e) => handleDeleteUserTemplate(template, e)}
                         disabled={deletingTemplateId === template.template_id}
-                        className={`absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow z-20 opacity-0 group-hover:opacity-100 transition-opacity ${
+                        className={`absolute -top-2 -left-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow z-20 opacity-0 group-hover:opacity-100 transition-opacity ${
                           deletingTemplateId === template.template_id ? 'opacity-60 cursor-not-allowed' : ''
                         }`}
                         aria-label="删除模板"
