@@ -1,7 +1,7 @@
 /**
  * 用户管理页面（管理员专用）
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight, Crown, Image, Zap, FileText, Phone } from 'lucide-react';
 import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu, Pagination } from '@/components/shared';
@@ -22,6 +22,7 @@ export const UserManagement: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const searchTermRef = useRef(''); // 用于存储实际搜索时的值
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
@@ -69,7 +70,7 @@ export const UserManagement: React.FC = () => {
       const response = await listUsers({
         limit: pageSize,
         offset: (currentPage - 1) * pageSize,
-        search: searchTerm || undefined,
+        search: searchTermRef.current || undefined,
         role: roleFilter || undefined,
         status: statusFilter || undefined,
       });
@@ -86,7 +87,7 @@ export const UserManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [roleFilter, statusFilter, searchTerm, currentPage, pageSize]); // 移除 show 依赖，避免无限循环
+  }, [roleFilter, statusFilter, currentPage, pageSize]); // 移除 searchTerm，只在手动搜索时使用
 
   // 加载系统配置
   const loadSystemConfig = useCallback(async () => {
@@ -157,9 +158,11 @@ export const UserManagement: React.FC = () => {
     setCurrentPage(1);
   };
 
-  // 搜索处理（重置页码）
+  // 搜索处理（重置页码并加载）
   const handleSearch = () => {
+    searchTermRef.current = searchTerm; // 更新搜索词
     setCurrentPage(1);
+    loadUsers();
   };
 
   const totalPages = Math.ceil(total / pageSize);
@@ -347,16 +350,21 @@ export const UserManagement: React.FC = () => {
         <Card className="p-6">
           {/* 工具栏 */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="搜索用户名..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500"
-              />
+            <div className="flex-1 flex gap-2">
+              <div className="flex-1 relative">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="搜索用户名..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500"
+                />
+              </div>
+              <Button variant="secondary" size="sm" onClick={handleSearch}>
+                搜索
+              </Button>
             </div>
             <div className="flex gap-2">
               <select

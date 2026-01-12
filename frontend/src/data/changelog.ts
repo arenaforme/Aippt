@@ -22,6 +22,15 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.10.1',
+    date: '2026-01-12',
+    changes: [
+      { type: 'feat', description: '批量生成页面时自动创建历史版本记录' },
+      { type: 'fix', description: '修复用户管理搜索框无法输入中文和多字符的问题' },
+      { type: 'perf', description: '用户管理页面新增搜索按钮' },
+    ],
+  },
+  {
     version: 'v2.10.0',
     date: '2026-01-12',
     changes: [

@@ -377,14 +377,14 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                     executor.submit(generate_single_image, page.id, page_data, i)
                     for i, (page, page_data) in enumerate(zip(pages, pages_data), 1)
                 ]
-                
+
                 # Process results as they complete
                 for future in as_completed(futures):
                     page_id, image_path, error = future.result()
-                    
-                    
+
+
                     db.session.expire_all()
-                    
+
                     # Update page in database
                     page = Page.query.get(page_id)
                     if page:
@@ -392,10 +392,28 @@ def generate_images_task(task_id: str, project_id: str, ai_service, file_service
                             page.status = 'FAILED'
                             failed += 1
                         else:
+                            # 创建版本记录
+                            from models import PageImageVersion
+                            existing_versions = PageImageVersion.query.filter_by(page_id=page_id).all()
+                            next_version = len(existing_versions) + 1
+
+                            # 标记旧版本为非当前
+                            for version in existing_versions:
+                                version.is_current = False
+
+                            # 创建新版本记录
+                            new_version = PageImageVersion(
+                                page_id=page_id,
+                                image_path=image_path,
+                                version_number=next_version,
+                                is_current=True
+                            )
+                            db.session.add(new_version)
+
                             page.generated_image_path = image_path
                             page.status = 'COMPLETED'
                             completed += 1
-                        
+
                         db.session.commit()
                     
                     # Update task progress
