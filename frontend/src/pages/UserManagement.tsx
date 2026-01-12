@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Search, Shield, User, Trash2, Key, Edit2, ToggleLeft, ToggleRight, Crown, Image, Zap, FileText, Phone } from 'lucide-react';
-import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu } from '@/components/shared';
+import { Button, Card, Input, Loading, Modal, useToast, useConfirm, UserMenu, Pagination } from '@/components/shared';
 import { listUsers, createUser, updateUser, deleteUser, resetUserPassword, getSystemConfig, updateSystemConfig } from '@/api/endpoints';
 import { formatDate } from '@/utils/projectUtils';
 import * as membershipApi from '@/api/membership';
@@ -24,6 +24,10 @@ export const UserManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // 会员管理相关状态
   const [plans, setPlans] = useState<MembershipPlan[]>([]);
@@ -63,7 +67,9 @@ export const UserManagement: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await listUsers({
-        limit: 100,
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
+        search: searchTerm || undefined,
         role: roleFilter || undefined,
         status: statusFilter || undefined,
       });
@@ -80,7 +86,7 @@ export const UserManagement: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [roleFilter, statusFilter]); // 移除 show 依赖，避免无限循环
+  }, [roleFilter, statusFilter, searchTerm, currentPage, pageSize]); // 移除 show 依赖，避免无限循环
 
   // 加载系统配置
   const loadSystemConfig = useCallback(async () => {
@@ -141,10 +147,22 @@ export const UserManagement: React.FC = () => {
     loadPlans();
   }, [loadUsers, loadSystemConfig, loadPlans]);
 
-  // 过滤用户（前端搜索）
-  const filteredUsers = users.filter(u =>
-    u.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 分页处理
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  // 搜索处理（重置页码）
+  const handleSearch = () => {
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   // 创建用户
   const handleCreateUser = async () => {
@@ -336,6 +354,7 @@ export const UserManagement: React.FC = () => {
                 placeholder="搜索用户名..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-banana-500"
               />
             </div>
@@ -376,7 +395,7 @@ export const UserManagement: React.FC = () => {
           {/* 用户统计和系统设置 */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
             <div className="text-sm text-gray-500">
-              共 {total} 个用户，显示 {filteredUsers.length} 个
+              共 {total} 个用户
             </div>
             <div className="flex items-center gap-6">
               {/* 管理员二次认证开关 */}
@@ -424,7 +443,7 @@ export const UserManagement: React.FC = () => {
 
           {/* 用户列表表格 */}
           <UserTable
-            users={filteredUsers}
+            users={users}
             currentUserId={currentUser?.id}
             onUpdateRole={handleUpdateRole}
             onUpdateStatus={handleUpdateStatus}
@@ -433,6 +452,19 @@ export const UserManagement: React.FC = () => {
             onSetMembership={openMembershipModal}
             onSetQuota={openQuotaModal}
           />
+
+          {/* 分页 */}
+          {!isLoading && users.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              className="mt-6"
+            />
+          )}
         </Card>
       </main>
 

@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, Trash2, FolderOpen, User, AlertTriangle, Eye } from 'lucide-react';
-import { Button, Card, Input, Loading, useToast, useConfirm, UserMenu } from '@/components/shared';
+import { Button, Card, Input, Loading, useToast, useConfirm, UserMenu, Pagination } from '@/components/shared';
 import { listAllProjects, adminDeleteProject, listUsers } from '@/api/endpoints';
 import { formatDate } from '@/utils/projectUtils';
 import type { AdminProject, AdminUser } from '@/api/endpoints';
@@ -22,12 +22,17 @@ export const AdminProjects: React.FC = () => {
   const [userFilter, setUserFilter] = useState<string>('');
   const [orphanedFilter, setOrphanedFilter] = useState<string>('');
 
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
   // 加载项目列表
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await listAllProjects({
-        limit: 100,
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
         user_id: userFilter || undefined,
         is_orphaned: orphanedFilter === 'true' ? true : orphanedFilter === 'false' ? false : undefined,
         search: searchTerm || undefined,
@@ -43,7 +48,7 @@ export const AdminProjects: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [userFilter, orphanedFilter, searchTerm]);
+  }, [userFilter, orphanedFilter, searchTerm, currentPage, pageSize]);
 
   // 加载用户列表（用于筛选）
   const loadUsers = useCallback(async () => {
@@ -79,6 +84,24 @@ export const AdminProjects: React.FC = () => {
       { title: '删除项目', confirmText: '删除', cancelText: '取消', variant: 'danger' }
     );
   };
+
+  // 分页处理
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  // 筛选条件变化时重置页码
+  const handleSearch = () => {
+    setCurrentPage(1);
+    loadProjects();
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-banana-50 to-white">
@@ -129,7 +152,7 @@ export const AdminProjects: React.FC = () => {
               <option value="false">正常项目</option>
               <option value="true">孤立项目</option>
             </select>
-            <Button onClick={loadProjects}>搜索</Button>
+            <Button onClick={handleSearch}>搜索</Button>
           </div>
 
           {/* 项目列表 */}
@@ -204,6 +227,19 @@ export const AdminProjects: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {/* 分页 */}
+          {!isLoading && projects.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              className="mt-6"
+            />
           )}
         </Card>
       </main>

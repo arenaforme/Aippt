@@ -40,7 +40,7 @@ class VerificationCodeService:
 
         Args:
             phone: 手机号
-            purpose: 用途 (register/bind_phone)
+            purpose: 用途 (register/bind_phone/reset_password/admin_2fa)
             ip_address: 客户端IP
 
         Returns:
@@ -62,6 +62,12 @@ class VerificationCodeService:
             existing_user = User.query.filter_by(phone=phone).first()
             if existing_user:
                 return False, '该手机号已被其他账户绑定'
+
+        # 重置密码时检查手机号是否存在用户
+        if purpose == 'reset_password':
+            existing_user = User.query.filter_by(phone=phone).first()
+            if not existing_user:
+                return False, '该手机号未绑定任何账户'
 
         # 检查是否可以发送
         can_send, error = VerificationCode.can_send(phone, ip_address)

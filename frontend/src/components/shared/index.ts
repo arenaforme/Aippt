@@ -29,5 +29,6 @@ export { UserAgreementModal } from './UserAgreementModal';
 export { MembershipAgreementModal } from './MembershipAgreementModal';
 export { SmsCodeInput } from './SmsCodeInput';
 export { NotificationPopup } from './NotificationPopup';
+export { Pagination } from './Pagination';
 
 

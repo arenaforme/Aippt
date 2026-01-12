@@ -77,3 +77,27 @@ export const verifyAdmin2FA = async (
   });
   return response.data;
 };
+
+// 忘记密码 - 发送验证码
+export const forgotPasswordSendCode = async (
+  username: string
+): Promise<ApiResponse<{ phone_hint: string }>> => {
+  const response = await apiClient.post('/api/auth/forgot-password/send-code', {
+    username,
+  });
+  return response.data;
+};
+
+// 忘记密码 - 重置密码
+export const forgotPasswordReset = async (
+  username: string,
+  code: string,
+  newPassword: string
+): Promise<ApiResponse> => {
+  const response = await apiClient.post('/api/auth/forgot-password/reset', {
+    username,
+    code,
+    new_password: newPassword,
+  });
+  return response.data;
+};

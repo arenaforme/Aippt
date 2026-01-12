@@ -93,13 +93,22 @@ def mark_read():
 def admin_list_notifications():
     """
     GET /api/notifications/admin - 获取所有通知（管理员）
+    Query params: limit, offset
     """
+    limit = request.args.get('limit', 20, type=int)
+    offset = request.args.get('offset', 0, type=int)
+
+    # 获取总数
+    total = Notification.query.count()
+
+    # 分页查询
     notifications = Notification.query.order_by(
         Notification.sort_order.asc()
-    ).all()
+    ).offset(offset).limit(limit).all()
 
     return success_response({
-        'notifications': [n.to_dict() for n in notifications]
+        'notifications': [n.to_dict() for n in notifications],
+        'total': total
     })
 
 

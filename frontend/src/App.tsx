@@ -9,6 +9,7 @@ import { SlidePreview } from './pages/SlidePreview';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { BindPhone } from './pages/BindPhone';
 import { Profile } from './pages/Profile';
 import { UserManagement } from './pages/UserManagement';
@@ -61,6 +62,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
 
         {/* 绑定手机号路由（需要登录但跳过手机号检查） */}
         <Route path="/bind-phone" element={<ProtectedRoute skipPhoneCheck><BindPhone /></ProtectedRoute>} />

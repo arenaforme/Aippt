@@ -285,6 +285,75 @@ def get_profile():
     })
 
 
+@auth_bp.route('/forgot-password/send-code', methods=['POST'])
+def forgot_password_send_code():
+    """
+    忘记密码 - 发送验证码
+    POST /api/auth/forgot-password/send-code
+    Body: { username }
+    """
+    data = request.get_json()
+    if not data:
+        return error_response('INVALID_REQUEST', '请求数据不能为空', 400)
+
+    username = data.get('username', '').strip()
+    if not username:
+        return error_response('INVALID_REQUEST', '用户名不能为空', 400)
+
+    # 查找用户
+    from models import User
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return error_response('USER_NOT_FOUND', '用户不存在', 404)
+
+    # 检查用户是否绑定手机号
+    if not user.phone:
+        return error_response('NO_PHONE', '该账户未绑定手机号，请联系管理员重置密码', 400)
+
+    # 发送验证码
+    ip_address = get_client_ip()
+    success, message = verification_service.send_code(user.phone, 'reset_password', ip_address)
+
+    if not success:
+        return error_response('SEND_CODE_FAILED', message, 400)
+
+    return success_response({
+        'phone_hint': AuthService.mask_phone(user.phone)
+    }, '验证码已发送')
+
+
+@auth_bp.route('/forgot-password/reset', methods=['POST'])
+def forgot_password_reset():
+    """
+    忘记密码 - 重置密码
+    POST /api/auth/forgot-password/reset
+    Body: { username, code, new_password }
+    """
+    data = request.get_json()
+    if not data:
+        return error_response('INVALID_REQUEST', '请求数据不能为空', 400)
+
+    username = data.get('username', '').strip()
+    code = data.get('code', '').strip()
+    new_password = data.get('new_password', '')
+
+    if not username or not code or not new_password:
+        return error_response('INVALID_REQUEST', '用户名、验证码和新密码不能为空', 400)
+
+    ip_address = get_client_ip()
+    success, message = AuthService.reset_password_by_code(
+        username=username,
+        code=code,
+        new_password=new_password,
+        ip_address=ip_address
+    )
+
+    if not success:
+        return error_response('RESET_FAILED', message, 400)
+
+    return success_response(None, message)
+
+
 @auth_bp.route('/verify-admin', methods=['POST'])
 def verify_admin_2fa():
     """

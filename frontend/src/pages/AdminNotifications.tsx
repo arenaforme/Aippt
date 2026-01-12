@@ -12,7 +12,7 @@ import {
   adminGetNotificationSettings,
   adminUpdateNotificationSettings,
 } from '@/api/endpoints';
-import { Modal, Button, Input, Loading, useToast, useConfirm } from '@/components/shared';
+import { Modal, Button, Input, Loading, useToast, useConfirm, Pagination } from '@/components/shared';
 import type { Notification } from '@/types';
 
 export const AdminNotifications = () => {
@@ -21,8 +21,13 @@ export const AdminNotifications = () => {
   const { confirm, ConfirmDialog } = useConfirm();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [popupEnabled, setPopupEnabled] = useState(true);
+
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   // 编辑弹窗状态
   const [showModal, setShowModal] = useState(false);
@@ -37,27 +42,45 @@ export const AdminNotifications = () => {
   const [saving, setSaving] = useState(false);
 
   // 加载数据
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [notifRes, settingsRes] = await Promise.all([
-          adminGetNotifications(),
-          adminGetNotificationSettings(),
-        ]);
-        if (notifRes.success && notifRes.data) {
-          setNotifications(notifRes.data.notifications);
-        }
-        if (settingsRes.success && settingsRes.data) {
-          setPopupEnabled(settingsRes.data.popup_enabled);
-        }
-      } catch (error) {
-        show({ message: '加载数据失败', type: 'error' });
-      } finally {
-        setLoading(false);
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [notifRes, settingsRes] = await Promise.all([
+        adminGetNotifications({
+          limit: pageSize,
+          offset: (currentPage - 1) * pageSize,
+        }),
+        adminGetNotificationSettings(),
+      ]);
+      if (notifRes.success && notifRes.data) {
+        setNotifications(notifRes.data.notifications);
+        setTotal(notifRes.data.total);
       }
-    };
+      if (settingsRes.success && settingsRes.data) {
+        setPopupEnabled(settingsRes.data.popup_enabled);
+      }
+    } catch (error) {
+      show({ message: '加载数据失败', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadData();
-  }, []);
+  }, [currentPage, pageSize]);
+
+  // 分页处理
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   // 打开新建弹窗
   const handleCreate = () => {
@@ -89,17 +112,15 @@ export const AdminNotifications = () => {
     try {
       if (editingId) {
         const res = await adminUpdateNotification(editingId, form);
-        if (res.success && res.data) {
-          setNotifications(prev =>
-            prev.map(n => n.id === editingId ? res.data!.notification : n)
-          );
+        if (res.success) {
           show({ message: '更新成功', type: 'success' });
+          loadData();
         }
       } else {
         const res = await adminCreateNotification(form);
-        if (res.success && res.data) {
-          setNotifications(prev => [...prev, res.data!.notification]);
+        if (res.success) {
           show({ message: '创建成功', type: 'success' });
+          loadData();
         }
       }
       setShowModal(false);
@@ -117,8 +138,8 @@ export const AdminNotifications = () => {
       async () => {
         try {
           await adminDeleteNotification(id);
-          setNotifications(prev => prev.filter(n => n.id !== id));
           show({ message: '删除成功', type: 'success' });
+          loadData();
         } catch (error) {
           show({ message: '删除失败', type: 'error' });
         }
@@ -240,6 +261,17 @@ export const AdminNotifications = () => {
                 ))}
               </tbody>
             </table>
+
+            {/* 分页 */}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              className="p-4 border-t"
+            />
           </div>
         )}
       </div>

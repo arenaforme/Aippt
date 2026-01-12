@@ -22,6 +22,15 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.9.0',
+    date: '2026-01-12',
+    changes: [
+      { type: 'feat', description: '新增忘记密码功能，支持短信验证码重置密码' },
+      { type: 'feat', description: '管理后台分页功能：项目管理、用户管理、审计日志、通知管理' },
+      { type: 'feat', description: '新增通用分页组件，支持页码导航和每页条数选择' },
+    ],
+  },
+  {
     version: 'v2.8.1',
     date: '2026-01-11',
     changes: [

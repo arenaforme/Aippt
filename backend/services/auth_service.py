@@ -402,3 +402,58 @@ class AuthService:
         if not phone or len(phone) < 7:
             return phone
         return f"{phone[:3]}****{phone[-4:]}"
+
+    @classmethod
+    def reset_password_by_code(cls, username: str, code: str, new_password: str,
+                                ip_address: str = None) -> Tuple[bool, str]:
+        """
+        通过验证码重置密码（忘记密码功能）
+
+        Args:
+            username: 用户名
+            code: 短信验证码
+            new_password: 新密码
+            ip_address: 客户端 IP 地址
+
+        Returns:
+            (是否成功, 消息)
+        """
+        from services.verification_code_service import verification_service
+
+        # 查找用户
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return False, '用户不存在'
+
+        # 检查用户是否绑定手机号
+        if not user.phone:
+            return False, '该账户未绑定手机号，请联系管理员重置密码'
+
+        # 验证验证码
+        valid, msg = verification_service.verify_code(user.phone, code, 'reset_password')
+        if not valid:
+            return False, msg
+
+        # 验证新密码强度
+        valid, error_msg = validate_password(new_password)
+        if not valid:
+            return False, error_msg
+
+        # 更新密码
+        user.set_password(new_password)
+        user.login_attempts = 0
+        user.locked_until = None
+        user.must_change_password = False
+        db.session.commit()
+
+        # 记录审计日志
+        AuditLog.log(
+            user_id=user.id,
+            username=user.username,
+            action='reset_password',
+            details='用户通过手机验证码重置密码',
+            ip_address=ip_address,
+            result='success'
+        )
+
+        return True, '密码重置成功'

@@ -224,7 +224,7 @@ export const Login: React.FC = () => {
             </button>
           </div>
 
-          {/* 记住我 */}
+          {/* 记住我和忘记密码 */}
           <div className="flex items-center justify-between">
             <label className="flex items-center cursor-pointer">
               <input
@@ -235,6 +235,9 @@ export const Login: React.FC = () => {
               />
               <span className="ml-2 text-sm text-gray-600">记住我（7天）</span>
             </label>
+            <Link to="/forgot-password" className="text-sm text-banana-600 hover:text-banana-700">
+              忘记密码？
+            </Link>
           </div>
 
           {/* 登录按钮 */}

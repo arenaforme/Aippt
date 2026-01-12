@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Search, FileText, CheckCircle, XCircle, Filter } from 'lucide-react';
-import { Button, Card, Input, Loading, UserMenu } from '@/components/shared';
+import { Button, Card, Input, Loading, UserMenu, Pagination } from '@/components/shared';
 import { listAuditLogs, listUsers } from '@/api/endpoints';
 import { formatDate } from '@/utils/projectUtils';
 import type { AuditLogEntry, AdminUser } from '@/api/endpoints';
@@ -37,12 +37,17 @@ export const AuditLogs: React.FC = () => {
   const [actionFilter, setActionFilter] = useState('');
   const [resultFilter, setResultFilter] = useState('');
 
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
   // 加载审计日志
   const loadLogs = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await listAuditLogs({
-        limit: 100,
+        limit: pageSize,
+        offset: (currentPage - 1) * pageSize,
         username: usernameFilter || undefined,
         action: actionFilter || undefined,
         result: resultFilter || undefined,
@@ -56,7 +61,7 @@ export const AuditLogs: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [usernameFilter, actionFilter, resultFilter]);
+  }, [usernameFilter, actionFilter, resultFilter, currentPage, pageSize]);
 
   // 加载用户列表
   const loadUsers = useCallback(async () => {
@@ -79,6 +84,24 @@ export const AuditLogs: React.FC = () => {
   const getActionLabel = (action: string) => {
     return ACTION_LABELS[action] || action;
   };
+
+  // 分页处理
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  // 搜索处理（重置页码）
+  const handleSearch = () => {
+    setCurrentPage(1);
+    loadLogs();
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-banana-50 to-white">
@@ -106,7 +129,7 @@ export const AuditLogs: React.FC = () => {
                 placeholder="搜索用户名..."
                 value={usernameFilter}
                 onChange={(e) => setUsernameFilter(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && loadLogs()}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 icon={<Search size={18} />}
               />
             </div>
@@ -129,7 +152,7 @@ export const AuditLogs: React.FC = () => {
               <option value="success">成功</option>
               <option value="failure">失败</option>
             </select>
-            <Button onClick={loadLogs}>搜索</Button>
+            <Button onClick={handleSearch}>搜索</Button>
           </div>
 
           {/* 日志列表 */}
@@ -183,6 +206,19 @@ export const AuditLogs: React.FC = () => {
                 </tbody>
               </table>
             </div>
+          )}
+
+          {/* 分页 */}
+          {!isLoading && logs.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              className="mt-6"
+            />
           )}
         </Card>
       </main>

@@ -862,12 +862,14 @@ export interface AdminUser {
 export const listUsers = async (params?: {
   limit?: number;
   offset?: number;
+  search?: string;
   status?: string;
   role?: string;
 }): Promise<ApiResponse<{ users: AdminUser[]; total: number }>> => {
   const searchParams = new URLSearchParams();
   if (params?.limit) searchParams.append('limit', params.limit.toString());
   if (params?.offset) searchParams.append('offset', params.offset.toString());
+  if (params?.search) searchParams.append('search', params.search);
   if (params?.status) searchParams.append('status', params.status);
   if (params?.role) searchParams.append('role', params.role);
 
@@ -1240,12 +1242,21 @@ export const markNotificationsRead = async (): Promise<ApiResponse<null>> => {
 /**
  * 获取所有通知（管理员）
  */
-export const adminGetNotifications = async (): Promise<ApiResponse<{
+export const adminGetNotifications = async (params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<ApiResponse<{
   notifications: Notification[];
+  total: number;
 }>> => {
+  const searchParams = new URLSearchParams();
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+  if (params?.offset) searchParams.append('offset', params.offset.toString());
+
   const response = await apiClient.get<ApiResponse<{
     notifications: Notification[];
-  }>>('/api/notifications/admin');
+    total: number;
+  }>>(`/api/notifications/admin?${searchParams.toString()}`);
   return response.data;
 };
 
