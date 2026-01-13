@@ -704,6 +704,20 @@ export const adminDeletePresetTemplate = async (templateId: string): Promise<Api
   return response.data;
 };
 
+/**
+ * 更新预设模板名称（管理员）
+ */
+export const adminUpdatePresetTemplate = async (
+  templateId: string,
+  name: string
+): Promise<ApiResponse<{ template: UserTemplate; message: string }>> => {
+  const response = await apiClient.put<ApiResponse<{ template: UserTemplate; message: string }>>(
+    `/api/admin/preset-templates/${templateId}`,
+    { name }
+  );
+  return response.data;
+};
+
 // ===== 管理员用户模板管理 API =====
 
 /**

@@ -5,6 +5,7 @@ import { listUserTemplates, uploadUserTemplate, deleteUserTemplate, type UserTem
 import { materialUrlToFile } from '@/components/shared/MaterialSelector';
 import type { Material } from '@/api/endpoints';
 import { ImagePlus, X, Shield, ZoomIn, Check } from 'lucide-react';
+import { checkImageResolution } from '@/utils';
 
 interface TemplateSelectorProps {
   onSelect: (templateFile: File | null, templateId?: string) => void;
@@ -58,6 +59,15 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       try {
+        // 检测图片分辨率并提示
+        const resolution = await checkImageResolution(file);
+        if (resolution.message) {
+          show({
+            message: resolution.message,
+            type: resolution.status === 'low' ? 'warning' : 'info'
+          });
+        }
+
         if (showUpload) {
           const response = await uploadUserTemplate(file);
           if (response.data) {

@@ -22,6 +22,14 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.11.0',
+    date: '2026-01-13',
+    changes: [
+      { type: 'feat', description: '模板上传时检测图片分辨率并提示（低于1280px警告，高于4K提示）' },
+      { type: 'feat', description: '管理员可修改预设模板名称' },
+    ],
+  },
+  {
     version: 'v2.10.2',
     date: '2026-01-12',
     changes: [

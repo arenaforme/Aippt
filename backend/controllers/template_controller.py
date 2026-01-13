@@ -363,6 +363,45 @@ def admin_delete_preset_template(template_id):
         return error_response('SERVER_ERROR', str(e), 500)
 
 
+@admin_preset_template_bp.route('/<template_id>', methods=['PUT'])
+@admin_required
+def admin_update_preset_template(template_id):
+    """
+    PUT /api/admin/preset-templates/<id> - 更新预设模板名称（管理员）
+
+    JSON Body: { "name": "新模板名称" }
+    """
+    try:
+        template = UserTemplate.query.get(template_id)
+
+        if not template:
+            return not_found('Template')
+
+        if not template.is_preset:
+            return bad_request("只能通过此接口修改预设模板")
+
+        data = request.get_json()
+        if not data:
+            return bad_request("请求体不能为空")
+
+        name = data.get('name', '').strip()
+        if not name:
+            return bad_request("模板名称不能为空")
+
+        template.name = name
+        db.session.commit()
+
+        return success_response({
+            'template': template.to_dict(),
+            'message': '预设模板更新成功'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error updating preset template: {e}", exc_info=True)
+        return error_response('SERVER_ERROR', str(e), 500)
+
+
 # ========== Admin User Template Management Endpoints ==========
 
 admin_user_template_bp = Blueprint('admin_user_templates', __name__, url_prefix='/api/admin/user-templates')

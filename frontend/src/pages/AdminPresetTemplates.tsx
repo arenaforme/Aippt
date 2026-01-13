@@ -3,12 +3,12 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Shield, Image } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Shield, Image, Pencil } from 'lucide-react';
 import { Button, Card, Loading, Modal, useToast, useConfirm, UserMenu, Pagination, ImagePreviewModal } from '@/components/shared';
-import { adminListPresetTemplates, adminCreatePresetTemplate, adminDeletePresetTemplate } from '@/api/endpoints';
+import { adminListPresetTemplates, adminCreatePresetTemplate, adminDeletePresetTemplate, adminUpdatePresetTemplate } from '@/api/endpoints';
 import type { UserTemplate } from '@/api/endpoints';
 import { getImageUrl } from '@/api/client';
-import { formatDate } from '@/utils/projectUtils';
+import { formatDate, checkImageResolution } from '@/utils';
 
 export const AdminPresetTemplates: React.FC = () => {
   const navigate = useNavigate();
@@ -26,6 +26,13 @@ export const AdminPresetTemplates: React.FC = () => {
   const [uploadName, setUploadName] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [resolutionInfo, setResolutionInfo] = useState<{ message: string; type: 'warning' | 'info' } | null>(null);
+
+  // 编辑弹窗状态
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<UserTemplate | null>(null);
+  const [editName, setEditName] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // 图片预览状态
   const [previewImage, setPreviewImage] = useState<{ url: string; title?: string } | null>(null);
@@ -67,11 +74,29 @@ export const AdminPresetTemplates: React.FC = () => {
       setIsUploadModalOpen(false);
       setUploadName('');
       setUploadFile(null);
+      setResolutionInfo(null);
       loadTemplates();
     } catch (error: any) {
       show({ message: '上传失败: ' + (error.message || '未知错误'), type: 'error' });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // 处理文件选择，检测分辨率
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setUploadFile(file);
+    setResolutionInfo(null);
+
+    if (file) {
+      const resolution = await checkImageResolution(file);
+      if (resolution.message) {
+        setResolutionInfo({
+          message: resolution.message,
+          type: resolution.status === 'low' ? 'warning' : 'info'
+        });
+      }
     }
   };
 
@@ -90,6 +115,34 @@ export const AdminPresetTemplates: React.FC = () => {
       },
       { title: '删除预设模板', confirmText: '删除', variant: 'danger' }
     );
+  };
+
+  // 打开编辑弹窗
+  const handleOpenEdit = (template: UserTemplate) => {
+    setEditingTemplate(template);
+    setEditName(template.name || '');
+    setIsEditModalOpen(true);
+  };
+
+  // 更新预设模板名称
+  const handleUpdate = async () => {
+    if (!editingTemplate || !editName.trim()) {
+      show({ message: '模板名称不能为空', type: 'error' });
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      await adminUpdatePresetTemplate(editingTemplate.template_id, editName.trim());
+      show({ message: '模板名称已更新', type: 'success' });
+      setIsEditModalOpen(false);
+      setEditingTemplate(null);
+      setEditName('');
+      loadTemplates();
+    } catch (error: any) {
+      show({ message: '更新失败: ' + (error.message || '未知错误'), type: 'error' });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -146,10 +199,19 @@ export const AdminPresetTemplates: React.FC = () => {
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1">
                       <p className="text-white/80 text-xs">{formatDate(template.created_at)}</p>
                     </div>
+                    {/* 编辑按钮 */}
+                    <button
+                      onClick={() => handleOpenEdit(template)}
+                      className="absolute top-2 left-2 p-1.5 bg-blue-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-600"
+                      title="编辑名称"
+                    >
+                      <Pencil size={14} />
+                    </button>
                     {/* 删除按钮 */}
                     <button
                       onClick={() => handleDelete(template)}
                       className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      title="删除模板"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -197,17 +259,58 @@ export const AdminPresetTemplates: React.FC = () => {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+              onChange={handleFileChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg"
             />
             {uploadFile && (
               <p className="mt-1 text-sm text-gray-500">已选择: {uploadFile.name}</p>
             )}
+            {resolutionInfo && (
+              <p className={`mt-1 text-sm ${resolutionInfo.type === 'warning' ? 'text-amber-600' : 'text-blue-600'}`}>
+                {resolutionInfo.message}
+              </p>
+            )}
           </div>
           <div className="flex justify-end gap-3 pt-4">
-            <Button variant="secondary" onClick={() => setIsUploadModalOpen(false)}>取消</Button>
+            <Button variant="secondary" onClick={() => { setIsUploadModalOpen(false); setResolutionInfo(null); }}>取消</Button>
             <Button variant="primary" onClick={handleUpload} disabled={isUploading}>
               {isUploading ? '上传中...' : '上传'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 编辑弹窗 */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setEditingTemplate(null); setEditName(''); }}
+        title="编辑预设模板"
+      >
+        <div className="space-y-4">
+          {editingTemplate && (
+            <div className="flex justify-center">
+              <img
+                src={getImageUrl(editingTemplate.template_image_url)}
+                alt={editingTemplate.name || '预设模板'}
+                className="max-h-40 rounded-lg border border-gray-200"
+              />
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">模板名称 *</label>
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="请输入模板名称"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-banana-500 focus:border-banana-500"
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isUpdating) handleUpdate(); }}
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-4">
+            <Button variant="secondary" onClick={() => { setIsEditModalOpen(false); setEditingTemplate(null); setEditName(''); }}>取消</Button>
+            <Button variant="primary" onClick={handleUpdate} disabled={isUpdating}>
+              {isUpdating ? '保存中...' : '保存'}
             </Button>
           </div>
         </div>

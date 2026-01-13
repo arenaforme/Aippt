@@ -149,3 +149,57 @@ export function appendTokenToUrl(url: string): string {
   return `${url}${separator}token=${encodeURIComponent(token)}`;
 }
 
+/**
+ * 图片分辨率检测结果
+ */
+export interface ImageResolutionResult {
+  width: number;
+  height: number;
+  status: 'low' | 'optimal' | 'high';
+  message: string | null;
+}
+
+// 分辨率阈值常量
+const MIN_RECOMMENDED_SIZE = 1280;  // 最低推荐分辨率
+const MAX_RECOMMENDED_SIZE = 3840;  // 最高推荐分辨率（4K）
+
+/**
+ * 检测图片文件的分辨率并返回建议
+ * @param file 图片文件
+ * @returns Promise<ImageResolutionResult>
+ */
+export function checkImageResolution(file: File): Promise<ImageResolutionResult> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const { naturalWidth: width, naturalHeight: height } = img;
+      const maxDimension = Math.max(width, height);
+
+      let status: 'low' | 'optimal' | 'high';
+      let message: string | null = null;
+
+      if (maxDimension < MIN_RECOMMENDED_SIZE) {
+        status = 'low';
+        message = `图片分辨率较低（${width}×${height}），建议使用 1280px 以上的图片以获得更好的 AI 生成效果`;
+      } else if (maxDimension > MAX_RECOMMENDED_SIZE) {
+        status = 'high';
+        message = `图片分辨率较高（${width}×${height}），AI 模型会自动压缩处理，可考虑使用 4K 以下的图片以加快上传速度`;
+      } else {
+        status = 'optimal';
+      }
+
+      resolve({ width, height, status, message });
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve({ width: 0, height: 0, status: 'optimal', message: null });
+    };
+
+    img.src = url;
+  });
+}
+
