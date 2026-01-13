@@ -50,6 +50,7 @@ def upload_template(project_id):
         
         # Update project
         project.template_image_path = file_path
+        project.template_id = None  # 直接上传的模板没有关联的模板ID
         project.updated_at = datetime.utcnow()
         
         db.session.commit()
@@ -60,6 +61,74 @@ def upload_template(project_id):
     
     except Exception as e:
         db.session.rollback()
+        return error_response('SERVER_ERROR', str(e), 500)
+
+
+@template_bp.route('/<project_id>/template-from-id', methods=['POST'])
+@login_required
+def set_template_from_id(project_id):
+    """
+    POST /api/projects/{project_id}/template-from-id - 通过模板ID设置项目模板
+
+    优化：避免前端下载再上传的冗余操作，直接在服务器端复制文件
+
+    Body: { "template_id": "xxx" }
+    """
+    import shutil
+
+    try:
+        project = Project.query.get(project_id)
+        if not project:
+            return not_found('Project')
+
+        data = request.get_json()
+        if not data or 'template_id' not in data:
+            return bad_request("Missing template_id")
+
+        template_id = data['template_id']
+
+        # 查找模板（支持用户模板和预设模板）
+        template = UserTemplate.query.filter(
+            UserTemplate.id == template_id,
+            or_(
+                UserTemplate.is_preset == True,  # 预设模板所有人可用
+                UserTemplate.user_id == g.current_user.id  # 用户自己的模板
+            )
+        ).first()
+
+        if not template:
+            return not_found('Template')
+
+        # 获取源文件路径
+        file_service = FileService(current_app.config['UPLOAD_FOLDER'])
+        source_path = file_service.upload_folder / template.file_path
+
+        if not source_path.exists():
+            return error_response('FILE_NOT_FOUND', '模板文件不存在', 404)
+
+        # 复制到项目模板目录
+        template_dir = file_service._get_template_dir(project_id)
+        ext = source_path.suffix or '.png'
+        dest_filename = f"template{ext}"
+        dest_path = template_dir / dest_filename
+
+        shutil.copy2(str(source_path), str(dest_path))
+
+        # 更新项目
+        project.template_image_path = dest_path.relative_to(file_service.upload_folder).as_posix()
+        project.template_id = template_id  # 保存选中的模板ID
+        project.updated_at = datetime.utcnow()
+
+        db.session.commit()
+
+        return success_response({
+            'template_image_url': f'/files/{project_id}/template/{dest_filename}',
+            'template_id': template_id
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error setting template from ID: {e}", exc_info=True)
         return error_response('SERVER_ERROR', str(e), 500)
 
 

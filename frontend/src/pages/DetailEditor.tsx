@@ -1,10 +1,11 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, FileText, Sparkles } from 'lucide-react';
-import { Button, Loading, useToast, useConfirm, AiRefineInput, FilePreviewModal, ProjectResourcesList, UserMenu } from '@/components/shared';
+import { Button, Loading, Modal, useToast, useConfirm, AiRefineInput, FilePreviewModal, ProjectResourcesList, UserMenu } from '@/components/shared';
+import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
 import { DescriptionCard } from '@/components/preview/DescriptionCard';
 import { useProjectStore } from '@/store/useProjectStore';
-import { refineDescriptions } from '@/api/endpoints';
+import { refineDescriptions, listUserTemplates, uploadTemplate, setTemplateFromId, type UserTemplate } from '@/api/endpoints';
 
 export const DetailEditor: React.FC = () => {
   const navigate = useNavigate();
@@ -23,6 +24,12 @@ export const DetailEditor: React.FC = () => {
   const { confirm, ConfirmDialog } = useConfirm();
   const [isAiRefining, setIsAiRefining] = React.useState(false);
   const [previewFileId, setPreviewFileId] = useState<string | null>(null);
+  // 模板选择相关状态
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
+  const [isUploadingTemplate, setIsUploadingTemplate] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedPresetTemplateId, setSelectedPresetTemplateId] = useState<string | null>(null);
 
   // 加载项目数据
   useEffect(() => {
@@ -38,6 +45,21 @@ export const DetailEditor: React.FC = () => {
       }
     }
   }, [projectId, currentProject?.id]); // 只在 projectId 或项目ID变化时更新
+
+  // 加载用户模板列表
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const response = await listUserTemplates();
+        if (response.data?.templates) {
+          setUserTemplates(response.data.templates);
+        }
+      } catch (error) {
+        console.error('加载用户模板失败:', error);
+      }
+    };
+    loadTemplates();
+  }, []);
 
 
   const handleGenerateAll = async () => {
@@ -117,6 +139,62 @@ export const DetailEditor: React.FC = () => {
     }
   }, [currentProject, projectId, syncProject, show]);
 
+  // 下一步按钮点击处理：检查模板
+  const handleNextStep = useCallback(() => {
+    if (!currentProject?.template_image_path) {
+      // 没有模板，弹出选择弹窗
+      setIsTemplateModalOpen(true);
+    } else {
+      // 有模板，直接跳转
+      navigate(`/project/${projectId}/preview`);
+    }
+  }, [currentProject?.template_image_path, projectId, navigate]);
+
+  // 模板选择完成后
+  const handleTemplateSelect = useCallback(async (templateFile: File | null, templateId?: string) => {
+    if (!projectId) return;
+
+    setIsUploadingTemplate(true);
+    try {
+      // 优化：如果有 templateId，直接调用后端复制，避免前端下载再上传
+      if (templateId) {
+        await setTemplateFromId(projectId, templateId);
+      } else if (templateFile) {
+        // 用户上传新文件的情况
+        await uploadTemplate(projectId, templateFile);
+      } else {
+        // 既没有 ID 也没有文件，取消选择
+        setIsUploadingTemplate(false);
+        return;
+      }
+
+      await syncProject(projectId);
+      setIsTemplateModalOpen(false);
+      show({ message: '模板选择成功', type: 'success' });
+
+      // 更新选择状态
+      if (templateId) {
+        if (templateId.length <= 3 && /^\d+$/.test(templateId)) {
+          setSelectedPresetTemplateId(templateId);
+          setSelectedTemplateId(null);
+        } else {
+          setSelectedTemplateId(templateId);
+          setSelectedPresetTemplateId(null);
+        }
+      }
+
+      // 选择模板后自动跳转到预览页
+      navigate(`/project/${projectId}/preview`);
+    } catch (error: any) {
+      show({
+        message: `选择模板失败: ${error.message || '未知错误'}`,
+        type: 'error'
+      });
+    } finally {
+      setIsUploadingTemplate(false);
+    }
+  }, [projectId, syncProject, show, navigate]);
+
   if (!currentProject) {
     return <Loading fullscreen message="加载项目中..." />;
   }
@@ -182,7 +260,7 @@ export const DetailEditor: React.FC = () => {
               variant="primary"
               size="sm"
               icon={<ArrowRight size={16} className="md:w-[18px] md:h-[18px]" />}
-              onClick={() => navigate(`/project/${projectId}/preview`)}
+              onClick={handleNextStep}
               disabled={!hasAllDescriptions}
               className="text-xs md:text-sm"
             >
@@ -276,6 +354,44 @@ export const DetailEditor: React.FC = () => {
       <ToastContainer />
       {ConfirmDialog}
       <FilePreviewModal fileId={previewFileId} onClose={() => setPreviewFileId(null)} />
+
+      {/* 模板选择 Modal */}
+      <Modal
+        isOpen={isTemplateModalOpen}
+        onClose={() => setIsTemplateModalOpen(false)}
+        title="选择模板"
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <p className="text-sm text-amber-800">
+              ⚠️ 生成 PPT 图片需要先选择一个模板作为风格参考，请选择或上传一张模板图片。
+            </p>
+          </div>
+          <TemplateSelector
+            onSelect={handleTemplateSelect}
+            selectedTemplateId={selectedTemplateId}
+            selectedPresetTemplateId={selectedPresetTemplateId}
+            projectTemplateId={currentProject?.template_id}
+            showUpload={false}
+            projectId={projectId || null}
+          />
+          {isUploadingTemplate && (
+            <div className="text-center py-2 text-sm text-gray-500">
+              正在上传模板...
+            </div>
+          )}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button
+              variant="ghost"
+              onClick={() => setIsTemplateModalOpen(false)}
+              disabled={isUploadingTemplate}
+            >
+              取消
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

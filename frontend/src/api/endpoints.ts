@@ -43,6 +43,20 @@ export const uploadTemplate = async (
 };
 
 /**
+ * 通过模板ID设置项目模板（优化：避免前端下载再上传）
+ */
+export const setTemplateFromId = async (
+  projectId: string,
+  templateId: string
+): Promise<ApiResponse<{ template_image_url: string }>> => {
+  const response = await apiClient.post<ApiResponse<{ template_image_url: string }>>(
+    `/api/projects/${projectId}/template-from-id`,
+    { template_id: templateId }
+  );
+  return response.data;
+};
+
+/**
  * 获取项目列表（历史项目）
  */
 export const listProjects = async (limit?: number, offset?: number): Promise<ApiResponse<{ projects: Project[]; total: number }>> => {

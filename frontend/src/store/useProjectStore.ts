@@ -35,7 +35,7 @@ interface ProjectState {
   setLastEditablePPTXUrl: (url: string | null) => void;
   
   // 项目操作
-  initializeProject: (type: 'idea' | 'outline' | 'description', content: string, templateImage?: File) => Promise<void>;
+  initializeProject: (type: 'idea' | 'outline' | 'description', content: string, templateImage?: File, templateId?: string) => Promise<void>;
   syncProject: (projectId?: string) => Promise<void>;
   
   // 页面操作
@@ -129,11 +129,11 @@ const debouncedUpdatePage = debounce(
   }),
 
   // 初始化项目
-  initializeProject: async (type, content, templateImage) => {
+  initializeProject: async (type, content, templateImage, templateId) => {
     set({ isGlobalLoading: true, error: null });
     try {
       const request: any = {};
-      
+
       if (type === 'idea') {
         request.idea_prompt = content;
       } else if (type === 'outline') {
@@ -141,17 +141,24 @@ const debouncedUpdatePage = debounce(
       } else if (type === 'description') {
         request.description_text = content;
       }
-      
+
       // 1. 创建项目
       const response = await api.createProject(request);
       const projectId = response.data?.project_id;
-      
+
       if (!projectId) {
         throw new Error('项目创建失败：未返回项目ID');
       }
-      
-      // 2. 如果有模板图片，上传模板
-      if (templateImage) {
+
+      // 2. 设置模板：优先使用 templateId（保存选中状态），否则上传文件
+      if (templateId) {
+        try {
+          await api.setTemplateFromId(projectId, templateId);
+        } catch (error) {
+          console.warn('设置模板失败:', error);
+          // 模板设置失败不影响项目创建，继续执行
+        }
+      } else if (templateImage) {
         try {
           await api.uploadTemplate(projectId, templateImage);
         } catch (error) {

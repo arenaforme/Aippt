@@ -27,7 +27,7 @@ import type { Material } from '@/api/endpoints';
 import { SlideCard } from '@/components/preview/SlideCard';
 import { useProjectStore } from '@/store/useProjectStore';
 import { getImageUrl } from '@/api/client';
-import { getPageImageVersions, setCurrentImageVersion, updateProject, uploadTemplate } from '@/api/endpoints';
+import { getPageImageVersions, setCurrentImageVersion, updateProject, uploadTemplate, setTemplateFromId, getSettings } from '@/api/endpoints';
 import type { ImageVersion, DescriptionContent } from '@/types';
 import { normalizeErrorMessage } from '@/utils';
 import * as membershipApi from '@/api/membership';
@@ -60,6 +60,7 @@ export const SlidePreview: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [forceTemplateSelect, setForceTemplateSelect] = useState(false); // 强制模板选择模式
   const [editPrompt, setEditPrompt] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [isOutlineExpanded, setIsOutlineExpanded] = useState(false);
@@ -89,6 +90,8 @@ export const SlidePreview: React.FC = () => {
   // 素材选择器模态开关
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [isMaterialSelectorOpen, setIsMaterialSelectorOpen] = useState(false);
+  // 并发数配置（用于计算预计时间）
+  const [maxImageWorkers, setMaxImageWorkers] = useState(8); // 默认值8
   // 每页编辑参数缓存（前端会话内缓存，便于重复执行）
   const [editContextByPage, setEditContextByPage] = useState<Record<string, {
     prompt: string;
@@ -114,7 +117,7 @@ export const SlidePreview: React.FC = () => {
       // 直接使用 projectId 同步项目数据
       syncProject(projectId);
     }
-    
+
     // 加载用户模板列表（用于按需获取File）
     const loadTemplates = async () => {
       try {
@@ -127,6 +130,19 @@ export const SlidePreview: React.FC = () => {
       }
     };
     loadTemplates();
+
+    // 加载系统设置（获取并发数配置）
+    const loadSettings = async () => {
+      try {
+        const response = await getSettings();
+        if (response.data?.max_image_workers) {
+          setMaxImageWorkers(response.data.max_image_workers);
+        }
+      } catch (error) {
+        console.error('加载系统设置失败:', error);
+      }
+    };
+    loadSettings();
   }, [projectId, currentProject, syncProject]);
 
   // 当项目加载后，初始化额外要求
@@ -148,6 +164,15 @@ export const SlidePreview: React.FC = () => {
       // 如果用户正在编辑（isEditingRequirements.current === true），则不更新本地状态
     }
   }, [currentProject?.id, currentProject?.extra_requirements]);
+
+  // 进入页面时检查是否有模板（兜底检查）
+  useEffect(() => {
+    if (currentProject && !currentProject.template_image_path) {
+      // 没有模板，强制弹出模板选择弹窗
+      setForceTemplateSelect(true);
+      setIsTemplateModalOpen(true);
+    }
+  }, [currentProject?.id, currentProject?.template_image_path]);
 
   // 加载当前页面的历史版本
   useEffect(() => {
@@ -615,29 +640,25 @@ export const SlidePreview: React.FC = () => {
 
   const handleTemplateSelect = async (templateFile: File | null, templateId?: string) => {
     if (!projectId) return;
-    
-    // 如果有templateId，按需加载File
-    let file = templateFile;
-    if (templateId && !file) {
-      file = await getTemplateFile(templateId, userTemplates);
-      if (!file) {
-        show({ message: '加载模板失败', type: 'error' });
-        return;
-      }
-    }
-    
-    if (!file) {
-      // 如果没有文件也没有 ID，可能是取消选择
-      return;
-    }
-    
+
     setIsUploadingTemplate(true);
     try {
-      await uploadTemplate(projectId, file);
+      // 优化：如果有 templateId，直接调用后端复制，避免前端下载再上传
+      if (templateId) {
+        await setTemplateFromId(projectId, templateId);
+      } else if (templateFile) {
+        // 用户上传新文件的情况
+        await uploadTemplate(projectId, templateFile);
+      } else {
+        // 既没有 ID 也没有文件，取消选择
+        setIsUploadingTemplate(false);
+        return;
+      }
+
       await syncProject(projectId);
       setIsTemplateModalOpen(false);
       show({ message: '模板更换成功', type: 'success' });
-      
+
       // 更新选择状态
       if (templateId) {
         // 判断是用户模板还是预设模板（短ID通常是预设模板）
@@ -650,9 +671,9 @@ export const SlidePreview: React.FC = () => {
         }
       }
     } catch (error: any) {
-      show({ 
-        message: `更换模板失败: ${error.message || '未知错误'}`, 
-        type: 'error' 
+      show({
+        message: `更换模板失败: ${error.message || '未知错误'}`,
+        type: 'error'
       });
     } finally {
       setIsUploadingTemplate(false);
@@ -663,12 +684,32 @@ export const SlidePreview: React.FC = () => {
     return <Loading fullscreen message="加载项目中..." />;
   }
 
+  // 计算批量生成的预计时间
+  // 公式：ceil(页面数 / 并发数) * 单页生成时间(4分钟)
+  const calculateEstimatedTime = () => {
+    const pageCount = currentProject.pages.length;
+    const singlePageTime = 4; // 单页生成约4分钟
+    const batches = Math.ceil(pageCount / maxImageWorkers);
+    const totalMinutes = batches * singlePageTime;
+
+    if (totalMinutes <= 5) {
+      return '4-5 分钟';
+    } else if (totalMinutes <= 10) {
+      return `${totalMinutes - 2}-${totalMinutes + 2} 分钟`;
+    } else {
+      return `约 ${totalMinutes} 分钟`;
+    }
+  };
+
   if (isGlobalLoading) {
     return (
       <Loading
         fullscreen
         message="生成图片中..."
         progress={taskProgress || undefined}
+        showTimer={true}
+        estimatedTime={calculateEstimatedTime()}
+        showStageHints={true}
       />
     );
   }
@@ -949,14 +990,18 @@ export const SlidePreview: React.FC = () => {
                       <div className="w-full h-full flex items-center justify-center bg-gray-100">
                         <div className="text-center">
                           <div className="text-6xl mb-4">🍌</div>
-                          <p className="text-gray-500 mb-4">
+                          <p className="text-gray-500 mb-2">
                             {selectedPage?.id && pageGeneratingTasks[selectedPage.id]
                               ? '正在生成中...'
                               : selectedPage?.status === 'GENERATING'
                               ? '正在生成中...'
                               : '尚未生成图片'}
                           </p>
-                          {(!selectedPage?.id || !pageGeneratingTasks[selectedPage.id]) && 
+                          {(selectedPage?.id && pageGeneratingTasks[selectedPage.id]) ||
+                           selectedPage?.status === 'GENERATING' ? (
+                            <p className="text-sm text-gray-400 mb-4">预计需要 4-5 分钟，可先查看其他页面</p>
+                          ) : null}
+                          {(!selectedPage?.id || !pageGeneratingTasks[selectedPage.id]) &&
                            selectedPage?.status !== 'GENERATING' && (
                             <Button
                               variant="primary"
@@ -1384,23 +1429,45 @@ export const SlidePreview: React.FC = () => {
       </Modal>
       <ToastContainer />
       {ConfirmDialog}
-      
+
       {/* 模板选择 Modal */}
       <Modal
         isOpen={isTemplateModalOpen}
-        onClose={() => setIsTemplateModalOpen(false)}
-        title="更换模板"
+        onClose={() => {
+          if (forceTemplateSelect) {
+            // 强制模式下，关闭弹窗返回上一页
+            navigate(-1);
+          } else {
+            setIsTemplateModalOpen(false);
+          }
+        }}
+        title={forceTemplateSelect ? '选择模板' : '更换模板'}
         size="lg"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600 mb-4">
-            选择一个新的模板将应用到后续PPT页面生成（不影响已经生成的页面）。你可以选择预设模板、已有模板或上传新模板。
-          </p>
+          {forceTemplateSelect ? (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-amber-800">
+                ⚠️ 生成 PPT 图片需要先选择一个模板作为风格参考，请选择或上传一张模板图片。
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600 mb-4">
+              选择一个新的模板将应用到后续PPT页面生成（不影响已经生成的页面）。你可以选择预设模板、已有模板或上传新模板。
+            </p>
+          )}
           <TemplateSelector
-            onSelect={handleTemplateSelect}
+            onSelect={async (file, id) => {
+              await handleTemplateSelect(file, id);
+              // 模板选择成功后，退出强制模式
+              if (forceTemplateSelect) {
+                setForceTemplateSelect(false);
+              }
+            }}
             selectedTemplateId={selectedTemplateId}
             selectedPresetTemplateId={selectedPresetTemplateId}
-            showUpload={false} // 在预览页面上传的模板直接应用到项目，不上传到用户模板库
+            projectTemplateId={currentProject?.template_id}
+            showUpload={false}
             projectId={projectId || null}
           />
           {isUploadingTemplate && (
@@ -1411,10 +1478,16 @@ export const SlidePreview: React.FC = () => {
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               variant="ghost"
-              onClick={() => setIsTemplateModalOpen(false)}
+              onClick={() => {
+                if (forceTemplateSelect) {
+                  navigate(-1);
+                } else {
+                  setIsTemplateModalOpen(false);
+                }
+              }}
               disabled={isUploadingTemplate}
             >
-              关闭
+              {forceTemplateSelect ? '返回上一页' : '关闭'}
             </Button>
           </div>
         </div>

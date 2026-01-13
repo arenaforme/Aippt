@@ -13,6 +13,32 @@ from .base import ImageProvider
 logger = logging.getLogger(__name__)
 
 
+def _compress_image(img: Image.Image, max_size: int = 1024) -> Image.Image:
+    """
+    压缩图片以减少网络传输数据量
+
+    Args:
+        img: PIL Image 对象
+        max_size: 最大边长（像素），默认 1024
+
+    Returns:
+        压缩后的 PIL Image 对象
+    """
+    width, height = img.size
+
+    if max(width, height) <= max_size:
+        return img
+
+    ratio = max_size / max(width, height)
+    new_width = int(width * ratio)
+    new_height = int(height * ratio)
+
+    compressed = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    logger.info(f"图片压缩: {width}x{height} -> {new_width}x{new_height}")
+
+    return compressed
+
+
 class GrsaiImageProvider(ImageProvider):
     """Grsai 自定义 SDK 图片生成 Provider"""
 
@@ -55,20 +81,29 @@ class GrsaiImageProvider(ImageProvider):
     def _convert_images_to_base64_urls(
         self, images: Optional[List[Image.Image]]
     ) -> List[str]:
-        """将 PIL Image 列表转换为 base64 URL 列表"""
+        """将 PIL Image 列表转换为 base64 URL 列表（带压缩）"""
         if not images:
             return []
 
         urls = []
         for img in images:
-            # 转换为 RGB 模式（如果需要）
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
+            # 先压缩图片
+            compressed = _compress_image(img)
 
+            # 转换为 RGB 模式（JPEG 不支持透明）
+            if compressed.mode in ("RGBA", "P", "LA"):
+                compressed = compressed.convert("RGB")
+
+            # 使用 JPEG 格式，比 PNG 小很多
             buffer = BytesIO()
-            img.save(buffer, format="PNG")
+            compressed.save(buffer, format="JPEG", quality=85, optimize=True)
+
+            # 记录压缩效果
+            size_kb = len(buffer.getvalue()) / 1024
+            logger.info(f"图片 base64 大小: {size_kb:.1f}KB")
+
             b64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-            urls.append(f"data:image/png;base64,{b64}")
+            urls.append(f"data:image/jpeg;base64,{b64}")
 
         return urls
 

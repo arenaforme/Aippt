@@ -11,6 +11,8 @@ interface TemplateSelectorProps {
   onSelect: (templateFile: File | null, templateId?: string) => void;
   selectedTemplateId?: string | null;
   selectedPresetTemplateId?: string | null;
+  currentTemplatePath?: string | null; // 当前项目已选择的模板路径（已废弃，保留兼容）
+  projectTemplateId?: string | null; // 项目中存储的模板ID，用于恢复选中状态
   showUpload?: boolean; // 是否显示上传到用户模板库的选项
   projectId?: string | null; // 项目ID，用于素材选择器
 }
@@ -19,6 +21,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   onSelect,
   selectedTemplateId,
   selectedPresetTemplateId,
+  currentTemplatePath,
+  projectTemplateId,
   showUpload = true,
   projectId,
 }) => {
@@ -54,6 +58,25 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   // 分离预设模板和用户模板
   const presetTemplates = userTemplates.filter(t => t.is_preset);
   const myTemplates = userTemplates.filter(t => !t.is_preset);
+
+  // 判断模板是否被选中
+  // 优先级：当前会话选择 > 项目存储的模板ID
+  const isTemplateSelected = (template: UserTemplate): boolean => {
+    // 1. 通过 selectedTemplateId 判断（当前会话中选择的用户模板）
+    if (selectedTemplateId && selectedTemplateId === template.template_id) {
+      return true;
+    }
+    // 2. 通过 selectedPresetTemplateId 判断（当前会话中选择的预设模板）
+    if (selectedPresetTemplateId && selectedPresetTemplateId === template.template_id) {
+      return true;
+    }
+    // 3. 通过 projectTemplateId 判断（从项目数据恢复的）
+    // 只有当前会话没有选择时才使用项目存储的ID
+    if (!selectedTemplateId && !selectedPresetTemplateId && projectTemplateId) {
+      return projectTemplateId === template.template_id;
+    }
+    return false;
+  };
 
   const handleTemplateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,7 +185,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
             </h4>
             <div className="grid grid-cols-4 gap-4 mb-4">
               {presetTemplates.map((template) => {
-                const isSelected = selectedTemplateId === template.template_id;
+                const isSelected = isTemplateSelected(template);
                 return (
                   <div
                     key={template.template_id}
@@ -223,7 +246,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
           <h4 className="text-sm font-medium text-gray-700 mb-2">我的模板</h4>
           <div className="grid grid-cols-4 gap-4">
             {myTemplates.map((template) => {
-              const isSelected = selectedTemplateId === template.template_id;
+              const isSelected = isTemplateSelected(template);
               return (
                 <div
                   key={template.template_id}

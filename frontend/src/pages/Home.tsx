@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, FileText, FileEdit, ImagePlus, Paperclip, Palette, Lightbulb, Search, Settings, Wrench } from 'lucide-react';
 import { Button, Textarea, Card, useToast, MaterialGeneratorModal, ReferenceFileList, ReferenceFileSelector, FilePreviewModal, ImagePreviewList, UserMenu } from '@/components/shared';
-import { TemplateSelector, getTemplateFile } from '@/components/shared/TemplateSelector';
-import { listUserTemplates, type UserTemplate, uploadReferenceFile, type ReferenceFile, associateFileToProject, triggerFileParse, uploadMaterial, associateMaterialsToProject } from '@/api/endpoints';
+import { TemplateSelector } from '@/components/shared/TemplateSelector';
+import { uploadReferenceFile, type ReferenceFile, associateFileToProject, triggerFileParse, uploadMaterial, associateMaterialsToProject } from '@/api/endpoints';
 import { useProjectStore } from '@/store/useProjectStore';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -22,7 +22,6 @@ export const Home: React.FC = () => {
   const [selectedPresetTemplateId, setSelectedPresetTemplateId] = useState<string | null>(null);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
-  const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [referenceFiles, setReferenceFiles] = useState<ReferenceFile[]>([]);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isFileSelectorOpen, setIsFileSelectorOpen] = useState(false);
@@ -30,23 +29,10 @@ export const Home: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // 检查是否有当前项目 & 加载用户模板
+  // 检查是否有当前项目
   useEffect(() => {
     const projectId = localStorage.getItem('currentProjectId');
     setCurrentProjectId(projectId);
-    
-    // 加载用户模板列表（用于按需获取File）
-    const loadTemplates = async () => {
-      try {
-        const response = await listUserTemplates();
-        if (response.data?.templates) {
-          setUserTemplates(response.data.templates);
-        }
-      } catch (error) {
-        console.error('加载用户模板失败:', error);
-      }
-    };
-    loadTemplates();
   }, []);
 
   const handleOpenMaterialModal = () => {
@@ -387,16 +373,14 @@ export const Home: React.FC = () => {
     }
 
     try {
-      // 如果有模板ID但没有File，按需加载
-      let templateFile = selectedTemplate;
-      if (!templateFile && (selectedTemplateId || selectedPresetTemplateId)) {
-        const templateId = selectedTemplateId || selectedPresetTemplateId;
-        if (templateId) {
-          templateFile = await getTemplateFile(templateId, userTemplates);
-        }
-      }
-      
-      await initializeProject(activeTab, content, templateFile || undefined);
+      // 获取模板ID（优先使用ID，保存选中状态）
+      const templateId = selectedTemplateId || selectedPresetTemplateId || undefined;
+
+      // 如果用户直接上传了文件（没有ID），则使用文件
+      // 如果有ID，则不需要文件，后端会通过ID复制模板
+      const templateFile = templateId ? undefined : selectedTemplate;
+
+      await initializeProject(activeTab, content, templateFile, templateId);
       
       // 根据类型跳转到不同页面
       const projectId = localStorage.getItem('currentProjectId');

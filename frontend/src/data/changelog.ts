@@ -22,6 +22,14 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.11.1',
+    date: '2026-01-13',
+    changes: [
+      { type: 'fix', description: '修复模板选中状态在页面跳转后丢失的问题' },
+      { type: 'perf', description: '批量生成图片时显示预计时间和阶段提示' },
+    ],
+  },
+  {
     version: 'v2.11.0',
     date: '2026-01-13',
     changes: [

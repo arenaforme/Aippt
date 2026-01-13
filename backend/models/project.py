@@ -24,6 +24,7 @@ class Project(db.Model):
     generated_filename = db.Column(db.String(100), nullable=True)  # AI生成的文件名（不含扩展名）
     creation_type = db.Column(db.String(20), nullable=False, default='idea')  # idea|outline|descriptions
     template_image_path = db.Column(db.String(500), nullable=True)
+    template_id = db.Column(db.String(36), nullable=True)  # 选中的模板ID，用于前端恢复选中状态
     status = db.Column(db.String(50), nullable=False, default='DRAFT')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -59,6 +60,7 @@ class Project(db.Model):
             'extra_requirements': self.extra_requirements,
             'creation_type': self.creation_type,
             'template_image_url': f'/files/{self.id}/template/{self.template_image_path.split("/")[-1]}' if self.template_image_path else None,
+            'template_id': self.template_id,  # 选中的模板ID
             'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

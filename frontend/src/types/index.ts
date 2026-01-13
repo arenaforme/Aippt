@@ -61,6 +61,7 @@ export interface Project {
   creation_type?: string;
   template_image_url?: string; // 后端返回 template_image_url
   template_image_path?: string; // 前端使用的别名
+  template_id?: string; // 选中的模板ID，用于恢复选中状态
   status: ProjectStatus;
   pages: Page[];
   created_at: string;
