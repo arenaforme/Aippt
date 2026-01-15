@@ -8,6 +8,7 @@ import logging
 import uuid
 import io
 import base64
+import json
 import requests
 from typing import Optional, List
 from pathlib import Path
@@ -51,7 +52,7 @@ def _get_ai_provider_format(provider_format: str = None) -> str:
 class FileParserService:
     """Service for parsing files using Docling and enhancing with image captions"""
 
-    def __init__(self, docling_api_base: str = "http://127.0.0.1:5004",
+    def __init__(self, docling_api_base: str = "http://127.0.0.1:5001",
                  file_parse_max_size: int = 50 * 1024 * 1024,
                  google_api_key: str = "", google_api_base: str = "",
                  openai_api_key: str = "", openai_api_base: str = "",
@@ -267,6 +268,10 @@ class FileParserService:
         """
         Parse file using Docling service
 
+        根据文件大小自动选择同步或异步 API：
+        - 小文件（<5MB）：使用同步接口 /v1/convert/file
+        - 大文件（>=5MB）：使用异步接口 /v1/convert/file/async
+
         Args:
             file_path: Path to the file to parse
             filename: Original filename
@@ -275,22 +280,45 @@ class FileParserService:
             Tuple of (markdown_content, error_message)
         """
         try:
-            # Prepare multipart form data
+            # 检查文件大小，决定使用同步还是异步 API
+            file_size = os.path.getsize(file_path)
+            use_async = file_size >= 5 * 1024 * 1024  # 5MB 阈值
+
+            # 构建 options JSON 参数（新 API 格式）
+            options = {
+                'do_ocr': True,  # 启用 OCR（服务端默认使用百度云 OCR）
+                'to_formats': ['md'],  # 输出格式为 Markdown
+                'include_images': True,  # 提取图片
+                'images_scale': 1.0,  # 图片缩放比例（降低内存消耗）
+                'document_timeout': 900,  # 单文档超时时间（秒）
+            }
+
+            if use_async:
+                logger.info(f"File size {file_size / 1024 / 1024:.1f}MB >= 5MB, using async API")
+                return self._parse_with_docling_async(file_path, filename, options)
+            else:
+                logger.info(f"File size {file_size / 1024 / 1024:.1f}MB < 5MB, using sync API")
+                return self._parse_with_docling_sync(file_path, filename, options)
+
+        except Exception as e:
+            error_msg = f"Unexpected error during Docling parsing: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            return None, error_msg
+
+    def _parse_with_docling_sync(self, file_path: str, filename: str, options: dict) -> tuple[Optional[str], Optional[str]]:
+        """使用同步 API 解析文件（适合小文件 <5MB）"""
+        try:
             with open(file_path, 'rb') as f:
                 files = {'files': (filename, f, 'application/octet-stream')}
-                data = {
-                    'to_formats': 'md',
-                    'do_ocr': 'false',
-                    'image_export_mode': 'embedded',
-                    'pdf_backend': 'dlparse_v4'
-                }
+                data = {'options': json.dumps(options)}
 
-                # Call Docling API (sync endpoint)
+                logger.info(f"Calling Docling sync API: {self.docling_api_base}/v1/convert/file, file: {filename}")
+
                 response = requests.post(
                     f"{self.docling_api_base}/v1/convert/file",
                     files=files,
                     data=data,
-                    timeout=300  # 5 minutes for large files
+                    timeout=300  # 5 分钟超时（同步 API 服务端限制 120 秒）
                 )
 
             if response.status_code != 200:
@@ -298,40 +326,134 @@ class FileParserService:
                 logger.error(error_msg)
                 return None, error_msg
 
-            result = response.json()
-
-            # Check response status
-            if result.get('status') != 'success':
-                error_msg = f"Docling parsing failed: {result.get('errors', 'Unknown error')}"
-                logger.error(error_msg)
-                return None, error_msg
-
-            # Extract markdown content
-            md_content = result.get('document', {}).get('md_content', '')
-            if not md_content:
-                error_msg = "Docling returned empty markdown content"
-                logger.error(error_msg)
-                return None, error_msg
-
-            logger.info(f"Docling parsing completed in {result.get('processing_time', 0):.2f}s")
-
-            # Save embedded base64 images to local files and replace URLs
-            md_content = self._save_base64_images(md_content)
-
-            return md_content, None
+            return self._process_docling_result(response.json())
 
         except requests.exceptions.Timeout:
-            error_msg = "Docling API timeout (exceeded 5 minutes)"
+            error_msg = "Docling sync API timeout"
             logger.error(error_msg)
             return None, error_msg
         except requests.exceptions.RequestException as e:
             error_msg = f"Docling API request failed: {str(e)}"
             logger.error(error_msg)
             return None, error_msg
-        except Exception as e:
-            error_msg = f"Unexpected error during Docling parsing: {str(e)}"
-            logger.error(error_msg, exc_info=True)
+
+    def _parse_with_docling_async(self, file_path: str, filename: str, options: dict) -> tuple[Optional[str], Optional[str]]:
+        """使用异步 API 解析文件（适合大文件 >=5MB）"""
+        try:
+            # 1. 提交异步任务
+            with open(file_path, 'rb') as f:
+                files = {'files': (filename, f, 'application/octet-stream')}
+                data = {'options': json.dumps(options)}
+
+                logger.info(f"Calling Docling async API: {self.docling_api_base}/v1/convert/file/async, file: {filename}")
+
+                response = requests.post(
+                    f"{self.docling_api_base}/v1/convert/file/async",
+                    files=files,
+                    data=data,
+                    timeout=60  # 提交任务超时
+                )
+
+            if response.status_code != 200:
+                error_msg = f"Docling async API error: {response.status_code} - {response.text[:200]}"
+                logger.error(error_msg)
+                return None, error_msg
+
+            task_info = response.json()
+            task_id = task_info.get('task_id')
+            if not task_id:
+                error_msg = "Docling async API returned no task_id"
+                logger.error(error_msg)
+                return None, error_msg
+
+            logger.info(f"Docling async task submitted: {task_id}")
+
+            # 2. 轮询任务状态
+            max_wait = 900  # 最多等待 15 分钟
+            poll_interval = 5  # 每 5 秒轮询一次
+            waited = 0
+
+            while waited < max_wait:
+                status_response = requests.get(
+                    f"{self.docling_api_base}/v1/status/poll/{task_id}",
+                    timeout=30
+                )
+
+                if status_response.status_code != 200:
+                    error_msg = f"Failed to poll task status: {status_response.status_code}"
+                    logger.error(error_msg)
+                    return None, error_msg
+
+                status_info = status_response.json()
+                task_status = status_info.get('task_status', 'unknown')
+
+                # 获取进度信息
+                task_meta = status_info.get('task_meta') or {}
+                progress = task_meta.get('progress', 0)
+                pages_processed = task_meta.get('pages_processed', 0)
+                pages_total = task_meta.get('pages_total', 0)
+
+                logger.info(f"Task {task_id} status: {task_status}, progress: {progress*100:.1f}%, pages: {pages_processed}/{pages_total}")
+
+                if task_status == 'success':
+                    break
+                elif task_status == 'failure':
+                    error_msg = f"Docling async task failed: {status_info}"
+                    logger.error(error_msg)
+                    return None, error_msg
+
+                time.sleep(poll_interval)
+                waited += poll_interval
+
+            if waited >= max_wait:
+                error_msg = f"Docling async task timeout after {max_wait}s"
+                logger.error(error_msg)
+                return None, error_msg
+
+            # 3. 获取结果
+            result_response = requests.get(
+                f"{self.docling_api_base}/v1/result/{task_id}",
+                timeout=60
+            )
+
+            if result_response.status_code != 200:
+                error_msg = f"Failed to get task result: {result_response.status_code}"
+                logger.error(error_msg)
+                return None, error_msg
+
+            return self._process_docling_result(result_response.json())
+
+        except requests.exceptions.Timeout:
+            error_msg = "Docling async API timeout"
+            logger.error(error_msg)
             return None, error_msg
+        except requests.exceptions.RequestException as e:
+            error_msg = f"Docling API request failed: {str(e)}"
+            logger.error(error_msg)
+            return None, error_msg
+
+    def _process_docling_result(self, result: dict) -> tuple[Optional[str], Optional[str]]:
+        """处理 Docling API 返回结果"""
+        # Check response status
+        if result.get('status') != 'success':
+            error_msg = f"Docling parsing failed: {result.get('errors', 'Unknown error')}"
+            logger.error(error_msg)
+            return None, error_msg
+
+        # Extract markdown content
+        md_content = result.get('document', {}).get('md_content', '')
+        if not md_content:
+            error_msg = "Docling returned empty markdown content"
+            logger.error(error_msg)
+            return None, error_msg
+
+        processing_time = result.get('processing_time', 0)
+        logger.info(f"Docling parsing completed in {processing_time:.2f}s")
+
+        # Save embedded base64 images to local files and replace URLs
+        md_content = self._save_base64_images(md_content)
+
+        return md_content, None
 
     def _save_base64_images(self, markdown_content: str) -> str:
         """

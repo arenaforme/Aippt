@@ -127,6 +127,13 @@ def update_settings():
         if "docling_api_base" in data:
             settings.docling_api_base = (data["docling_api_base"] or "").strip() or None
 
+        if "docling_ocr_engine" in data:
+            ocr_engine = (data["docling_ocr_engine"] or "").strip() or "easyocr"
+            valid_engines = ["easyocr", "rapidocr", "tesseract", "tesserocr", "ocrmac", "auto"]
+            if ocr_engine not in valid_engines:
+                return bad_request(f"OCR engine must be one of: {', '.join(valid_engines)}")
+            settings.docling_ocr_engine = ocr_engine
+
         if "image_caption_model" in data:
             settings.image_caption_model = (data["image_caption_model"] or "").strip() or None
 
@@ -186,6 +193,7 @@ def reset_settings():
         settings.text_model = Config.TEXT_MODEL
         settings.image_model = Config.IMAGE_MODEL
         settings.docling_api_base = Config.DOCLING_API_BASE
+        settings.docling_ocr_engine = Config.DOCLING_OCR_ENGINE
         settings.image_caption_model = Config.IMAGE_CAPTION_MODEL
         settings.output_language = 'zh'  # 重置为默认中文
         settings.image_resolution = Config.DEFAULT_RESOLUTION
@@ -266,6 +274,9 @@ def _sync_settings_to_config(settings: Settings):
     if settings.docling_api_base:
         current_app.config["DOCLING_API_BASE"] = settings.docling_api_base
         logger.info(f"Updated DOCLING_API_BASE to: {settings.docling_api_base}")
+    if settings.docling_ocr_engine:
+        current_app.config["DOCLING_OCR_ENGINE"] = settings.docling_ocr_engine
+        logger.info(f"Updated DOCLING_OCR_ENGINE to: {settings.docling_ocr_engine}")
     if settings.image_caption_model:
         current_app.config["IMAGE_CAPTION_MODEL"] = settings.image_caption_model
         logger.info(f"Updated IMAGE_CAPTION_MODEL to: {settings.image_caption_model}")

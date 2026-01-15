@@ -59,7 +59,7 @@ def _parse_file_async(file_id: str, file_path: str, filename: str, app):
             
             # Initialize parser service
             parser = FileParserService(
-                docling_api_base=current_app.config.get('DOCLING_API_BASE', 'http://127.0.0.1:5004'),
+                docling_api_base=current_app.config.get('DOCLING_API_BASE', 'http://127.0.0.1:5001'),
                 file_parse_max_size=current_app.config.get('FILE_PARSE_MAX_SIZE', 50 * 1024 * 1024),
                 google_api_key=current_app.config.get('GOOGLE_API_KEY', ''),
                 google_api_base=current_app.config.get('GOOGLE_API_BASE', ''),

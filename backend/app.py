@@ -90,11 +90,17 @@ def create_app():
     
     # Initialize logging (log to stdout so Docker can capture it)
     log_level = getattr(logging, app.config['LOG_LEVEL'], logging.INFO)
-    logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
+
+    # 强制重新配置 root logger（解决 Flask reloader 子进程日志问题）
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
+    # 清除现有 handlers 并添加新的
+    if not root_logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(log_level)
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s - %(message)s"))
+        root_logger.addHandler(handler)
     
     # 设置第三方库的日志级别，避免过多的DEBUG日志
     logging.getLogger('sqlalchemy.engine').setLevel(logging.WARNING)
@@ -229,6 +235,9 @@ def _load_settings_to_config(app):
         if settings.docling_api_base:
             app.config['DOCLING_API_BASE'] = settings.docling_api_base
             logging.info(f"Loaded DOCLING_API_BASE from settings: {settings.docling_api_base}")
+        if settings.docling_ocr_engine:
+            app.config['DOCLING_OCR_ENGINE'] = settings.docling_ocr_engine
+            logging.info(f"Loaded DOCLING_OCR_ENGINE from settings: {settings.docling_ocr_engine}")
 
         # Load image generation settings
         app.config['DEFAULT_RESOLUTION'] = settings.image_resolution

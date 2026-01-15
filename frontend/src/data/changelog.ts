@@ -22,6 +22,15 @@ export const changeTypeLabels: Record<ChangelogEntry['changes'][0]['type'], stri
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: 'v2.12.0',
+    date: '2026-01-15',
+    changes: [
+      { type: 'feat', description: '适配新版 Docling 文档解析服务（百度云 OCR）' },
+      { type: 'feat', description: '大文件（≥5MB）自动使用异步解析，支持更大文档' },
+      { type: 'perf', description: '优化文档解析稳定性和错误处理' },
+    ],
+  },
+  {
     version: 'v2.11.1',
     date: '2026-01-13',
     changes: [

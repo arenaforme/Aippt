@@ -23,6 +23,7 @@ class Settings(db.Model):
     text_model = db.Column(db.String(100), nullable=True)  # 文本大模型名称（覆盖 Config.TEXT_MODEL）
     image_model = db.Column(db.String(100), nullable=True)  # 图片大模型名称（覆盖 Config.IMAGE_MODEL）
     docling_api_base = db.Column(db.String(255), nullable=True)  # Docling 服务地址（覆盖 Config.DOCLING_API_BASE）
+    docling_ocr_engine = db.Column(db.String(50), nullable=True, default='easyocr')  # Docling OCR 引擎: easyocr, rapidocr, tesseract, auto
     image_caption_model = db.Column(db.String(100), nullable=True)  # 图片识别模型（覆盖 Config.IMAGE_CAPTION_MODEL）
     output_language = db.Column(db.String(10), nullable=False, default='zh')  # 输出语言偏好（zh, en, ja, auto）
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
@@ -43,6 +44,7 @@ class Settings(db.Model):
             'text_model': self.text_model,
             'image_model': self.image_model,
             'docling_api_base': self.docling_api_base,
+            'docling_ocr_engine': self.docling_ocr_engine,
             'image_caption_model': self.image_caption_model,
             'output_language': self.output_language,
             'created_at': self.created_at.isoformat() if self.created_at else None,
